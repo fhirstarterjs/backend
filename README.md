@@ -1,20 +1,20 @@
-# 🔥 fhirstarter
+# 🔥 fhirstarterjs
 
 SMART on FHIR Backend Services auth lifecycle for any FHIR client.
 
 ## Install
 
 ```sh
-npm install fhirstarter
+npm install fhirstarterjs
 ```
 
 ## Usage
 
-This example uses the official `fhirclient` package as the FHIR client; `fhirstarter` only manages auth.
+This example uses the official `fhirclient` package as the FHIR client; `fhirstarterjs` only manages auth.
 
 ```ts
 import FHIR from "fhirclient"
-import FHIRStarter from "fhirstarter"
+import FHIRStarter from "fhirstarterjs"
 
 const auth = new FHIRStarter({
    clientId: "your-client-id",
@@ -35,7 +35,7 @@ const bundle = await client.request("Patient?family=Smith")
 
 `auth.start()` fetches the first token and starts the proactive refresh loop. `auth.tokenResponse()` returns a live getter-backed object — `fhirclient` reads `access_token` dynamically per request, so it always picks up the latest token.
 
-`fhirstarter` does not fetch FHIR resources and does not bundle a FHIR client. It manages the auth lifecycle; the FHIR client does the rest.
+`fhirstarterjs` does not fetch FHIR resources and does not bundle a FHIR client. It manages the auth lifecycle; the FHIR client does the rest.
 
 `privateKey` can be PEM text, a `Buffer` from `readFileSync`, or a path to a PKCS#8 PEM file.
 
@@ -44,7 +44,7 @@ const bundle = await client.request("Patient?family=Smith")
 If needed, you can import the public types directly from the shipped type folder:
 
 ```ts
-import type { AuthConfig, JwkSet, LiveTokenResponse, Provider } from "fhirstarter/types/api"
+import type { AuthConfig, JwkSet, LiveTokenResponse, Provider } from "fhirstarterjs/types/api"
 ```
 
 ## Other FHIR clients
@@ -90,7 +90,7 @@ Some SMART Backend Services registrations require a public JWKS URL when using `
 
 ```ts
 import { writeFileSync } from "node:fs"
-import FHIRStarter from "fhirstarter"
+import FHIRStarter from "fhirstarterjs"
 
 const auth = new FHIRStarter({
    clientId: "your-client-id",
