@@ -1,6 +1,6 @@
 {
    "name": "fhirstarter",
-   "version": "0.1.0",
+   "version": "1.0.0",
    "description": "SMART Backend Services auth lifecycle for any FHIR client",
    "type": "module",
    "main": "./dist/fhirstarter.js",
