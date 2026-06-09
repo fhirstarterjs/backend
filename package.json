@@ -1,0 +1,38 @@
+{
+   "name": "fhirstarter",
+   "version": "0.1.0",
+   "description": "SMART Backend Services auth lifecycle for any FHIR client",
+   "type": "module",
+   "main": "./dist/fhirstarter.js",
+   "types": "./ts/fhirstarter.ts",
+   "exports": {
+      ".": {
+         "types": "./ts/fhirstarter.ts",
+         "import": "./dist/fhirstarter.js"
+      },
+      "./types/api": {
+         "types": "./types/api.d.ts"
+      },
+      "./types/internal": {
+         "types": "./types/internal.d.ts"
+      }
+   },
+   "files": ["dist", "ts", "types", "README.md", "LICENSE.md"],
+   "engines": {
+      "node": ">=20"
+   },
+   "author": "Joshua Faulkenberry <j@joshuafaulkenberry.com> (https://joshuafaulkenberry.com/)",
+   "license": "Kopimi",
+   "scripts": {
+      "check": "tsc --noEmit",
+      "build": "tsc -p tsconfig.build.json",
+      "prepack": "npm run build"
+   },
+   "dependencies": {
+      "jose": "^6.2.3"
+   },
+   "devDependencies": {
+      "@types/node": "^25.9.2",
+      "typescript": "^6.0.3"
+   }
+}
