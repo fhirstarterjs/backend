@@ -41,10 +41,10 @@ const bundle = await client.request("Patient?family=Smith")
 
 ## TypeScript types
 
-If needed, you can import the public types directly from the shipped type folder:
+If needed, you can import the public types directly:
 
 ```ts
-import type { AuthConfig, JwkSet, LiveTokenResponse, Provider } from "fhirstarterjs/types/api"
+import type { AuthConfig, JwkSet, LiveTokenResponse, Provider } from "fhirstarterjs"
 ```
 
 ## Other FHIR clients
@@ -117,7 +117,7 @@ Host `jwks.json` at the exact URL you register with your authorization server, t
 | Command | What |
 |---|---|
 | `npm run check` | `tsc --noEmit` |
-| `npm run build` | Compile to `dist/` (JS only — no `.d.ts`) |
+| `npm run build` | Compile to `dist/` |
 
 ## Notes
 
