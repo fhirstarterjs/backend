@@ -81,8 +81,22 @@ const res = await fetch(url, {
 | `tokenResponse()` | `LiveTokenResponse` | Getter-backed token response for `fhirclient` |
 | `onRefresh(callback)` | `() => void` | Subscribe to token updates — returns unsubscribe |
 | `getJwks()` | `Promise<JwkSet>` | Public JWKS derived from the private key |
+| `fhirStarter.thumbprint(privateKey)` | `string` | RFC 7638 JWK Thumbprint (base64url SHA-256) |
 
 `getJwks()` strips private key material — host the output JSON at your registered JWKS URL and pass that URL as `jwksUrl` so the JWT `jku` header is set automatically.
+
+## Thumbprint
+
+Derive a deterministic `kid` from a private key without instantiating the class:
+
+```ts
+import fhirStarter from "fhirstarterjs"
+
+const kid = fhirStarter.thumbprint("./privatekey.pem")
+console.log(kid) // base64url SHA-256 of the canonical RSA public JWK
+```
+
+This implements RFC 7638 — the SHA-256 of the sorted canonical JWK members `{e, kty, n}`, base64url-encoded. Use it as the `keyId` when registering your JWKS.
 
 ## JWKS
 

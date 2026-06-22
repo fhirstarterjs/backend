@@ -4,7 +4,7 @@ import {
    SignJWT,
    type JWTHeaderParameters,
 } from "jose";
-import { randomUUID } from "node:crypto";
+import { createHash, createPrivateKey, createPublicKey, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 /**
@@ -347,5 +347,25 @@ export default class fhirStarter implements Provider {
             `AuthConfig: privateKey must be PEM text, a Buffer, or a readable file path: ${trimmed}`,
          );
       }
+   }
+
+   /**
+    * Derives a deterministic key identifier from a private key using an
+    * RFC 7638 JWK Thumbprint (SHA-256 of canonical RSA public JWK members, base64url).
+    *
+    * @param privateKey - RSA PKCS#8 PEM text, a Buffer, or a readable file path.
+    * @returns A base64url-encoded SHA-256 thumbprint string.
+    * @throws If the key is not RSA or cannot be parsed.
+    */
+   static thumbprint(privateKey: string | Buffer): string {
+      const
+         pem = fhirStarter.resolvePrivateKey(privateKey),
+         key = createPrivateKey(pem)
+      if (key.asymmetricKeyType !== "rsa")
+         throw new Error(`thumbprint: expected RSA key, got ${key.asymmetricKeyType}`)
+      const
+         pub = createPublicKey(key).export({ format: "jwk" }) as { e?: string, n?: string, kty?: string },
+         canonical = JSON.stringify({ e: pub.e, kty: "RSA", n: pub.n })
+      return createHash("sha256").update(canonical).digest("base64url")
    }
 }
