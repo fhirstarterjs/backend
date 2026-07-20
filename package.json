@@ -1,7 +1,31 @@
 {
    "name": "fhirstarterjs",
    "version": "1.0.8",
-   "description": "SMART Backend Services auth lifecycle for any FHIR client",
+   "description": "SMART on FHIR Backend Services (client credentials) auth lifecycle for any FHIR client — JWT assertion, JWKS, and automatic token refresh.",
+   "keywords": [
+      "fhir",
+      "smart-on-fhir",
+      "smart",
+      "backend-services",
+      "smart-backend-services",
+      "fhir-auth",
+      "fhir-client",
+      "fhirclient",
+      "oauth",
+      "oauth2",
+      "client-credentials",
+      "jwt",
+      "jwt-assertion",
+      "jwks",
+      "token",
+      "token-refresh",
+      "access-token",
+      "healthcare",
+      "hl7",
+      "ehr",
+      "r4",
+      "interoperability"
+   ],
    "author": "Joshua Faulkenberry <j@joshuafaulkenberry.com> (https://joshuafaulkenberry.com/)",
    "license": "Kopimi",
    "homepage": "https://github.com/FaulkJ/fhirstarter#readme",
@@ -12,21 +36,6 @@
    "bugs": {
       "url": "https://github.com/FaulkJ/fhirstarter/issues"
    },
-   "keywords": [
-      "fhir",
-      "smart",
-      "smart-on-fhir",
-      "backend-services",
-      "oauth",
-      "jwt",
-      "hl7",
-      "healthcare",
-      "ehr",
-      "epic",
-      "fhirclient",
-      "token",
-      "jwks"
-   ],
    "type": "module",
    "main": "./dist/fhirstarter.js",
    "types": "./types/index.d.ts",
@@ -44,6 +53,10 @@
       "README.md",
       "LICENSE.md"
    ],
+   "publishConfig": {
+      "provenance": true,
+      "access": "public"
+   },
    "engines": {
       "node": ">=20"
    },
