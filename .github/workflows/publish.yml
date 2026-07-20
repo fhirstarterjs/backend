@@ -3,6 +3,7 @@ name: Publish to npm
 on:
    release:
       types: [published]
+   workflow_dispatch:
 
 jobs:
    publish:
@@ -18,6 +19,8 @@ jobs:
               registry-url: https://registry.npmjs.org
               package-manager-cache: false # never cache in release builds
          - run: npm install -g npm@latest # Trusted Publishing needs npm 11.5.1+
+         - name: Show OIDC repository claim
+           run: echo "github.repository = ${{ github.repository }}"
          - name: Verify version is not already published
            run: |
               PKG=$(node -p "require('./package.json').name")
