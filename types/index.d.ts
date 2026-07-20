@@ -1,3 +1,2 @@
-export { default } from "../ts/fhirstarter.js"
-export type * from "./api.d.ts"
-export type * from "./internal.d.ts"
+/// <reference path="./api.d.ts" />
+export { default } from "../dist/fhirstarter.js"

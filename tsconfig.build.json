@@ -3,7 +3,9 @@
    "compilerOptions": {
       "noEmit": false,
       "outDir": "dist",
-      "rootDir": "ts"
+      "rootDir": "ts",
+      "declaration": true,
+      "sourceMap": true
    },
    "include": ["ts", "types"]
 }
