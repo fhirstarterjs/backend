@@ -19,8 +19,13 @@ jobs:
               registry-url: https://registry.npmjs.org
               package-manager-cache: false # never cache in release builds
          - run: npm install -g npm@latest # Trusted Publishing needs npm 11.5.1+
-         - name: Show OIDC repository claim
-           run: echo "github.repository = ${{ github.repository }}"
+         - name: Show publish diagnostics
+           run: |
+              echo "github.repository = ${{ github.repository }}"
+              echo "node = $(node --version)"
+              echo "npm = $(npm --version)"
+              echo "registry = $(npm config get registry)"
+              test -n "$ACTIONS_ID_TOKEN_REQUEST_URL" && echo "OIDC request URL is available"
          - name: Verify version is not already published
            run: |
               PKG=$(node -p "require('./package.json').name")
@@ -31,4 +36,4 @@ jobs:
               fi
               echo "$PKG@$VER is not yet published — proceeding."
          - run: npm ci
-         - run: npm publish
+         - run: npm publish --loglevel verbose
