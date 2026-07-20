@@ -28,13 +28,13 @@
    ],
    "author": "Joshua Faulkenberry <j@joshuafaulkenberry.com> (https://joshuafaulkenberry.com/)",
    "license": "Kopimi",
-   "homepage": "https://github.com/FaulkJ/fhirstarter#readme",
+   "homepage": "https://github.com/FaulkJ/fhirStarter#readme",
    "repository": {
       "type": "git",
-      "url": "git+https://github.com/FaulkJ/fhirstarter.git"
+      "url": "git+https://github.com/FaulkJ/fhirStarter.git"
    },
    "bugs": {
-      "url": "https://github.com/FaulkJ/fhirstarter/issues"
+      "url": "https://github.com/FaulkJ/fhirStarter/issues"
    },
    "type": "module",
    "main": "./dist/fhirstarter.js",
