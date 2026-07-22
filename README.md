@@ -1,11 +1,36 @@
-# 🔥 fhirStarter
+# @fhirstarter/backend
 
-SMART on FHIR Backend Services auth lifecycle for any FHIR client.
+[![npm](https://img.shields.io/npm/v/@fhirstarter/backend)](https://www.npmjs.com/package/@fhirstarter/backend)
+[![CI](https://github.com/fhirstarterjs/backend/actions/workflows/ci.yml/badge.svg)](https://github.com/fhirstarterjs/backend/actions/workflows/ci.yml)
+[![Publish](https://github.com/fhirstarterjs/backend/actions/workflows/publish.yml/badge.svg)](https://github.com/fhirstarterjs/backend/actions/workflows/publish.yml)
+
+SMART on FHIR **Backend Services** (client credentials) auth lifecycle for any
+FHIR client. It handles the JWT client assertion, JWKS derivation, and automatic
+proactive token refresh — while staying client-agnostic, so you keep using
+`fhirclient`, `fhir-kit-client`, or raw `fetch`.
+
+> Launching from an EHR instead? See the sister project
+> **[@fhirstarter/ehr](https://github.com/fhirstarterjs/ehr)** — a turnkey SMART
+> **EHR-launch** wrapper with Vue/React components.
+
+
+## Contents
+
+- [Install](#install)
+- [Usage](#usage)
+- [TypeScript types](#typescript-types)
+- [Other FHIR clients](#other-fhir-clients)
+- [API](#api)
+- [Thumbprint](#thumbprint)
+- [JWKS](#jwks)
+- [Compatibility](#compatibility)
+- [Scripts](#scripts)
+- [Notes](#notes)
 
 ## Install
 
 ```sh
-npm install fhirstarterjs
+npm install @fhirstarter/backend
 ```
 
 ## Usage
@@ -14,7 +39,7 @@ This example uses the official `fhirclient` package as the FHIR client; `fhirSta
 
 ```ts
 import FHIR from "fhirclient"
-import fhirStarter from "fhirstarterjs"
+import fhirStarter from "@fhirstarter/backend"
 
 const auth = new fhirStarter({
    clientId: "your-client-id",
@@ -44,7 +69,7 @@ const bundle = await client.request("Patient?family=Smith")
 If needed, you can import the public types directly:
 
 ```ts
-import type { AuthConfig, JwkSet, LiveTokenResponse, Provider } from "fhirstarterjs"
+import type { AuthConfig, JwkSet, LiveTokenResponse, Provider } from "@fhirstarter/backend"
 ```
 
 ## Other FHIR clients
@@ -90,7 +115,7 @@ const res = await fetch(url, {
 Derive a deterministic `kid` from a private key without instantiating the class:
 
 ```ts
-import fhirStarter from "fhirstarterjs"
+import fhirStarter from "@fhirstarter/backend"
 
 const kid = fhirStarter.thumbprint("./privatekey.pem")
 console.log(kid) // base64url SHA-256 of the canonical RSA public JWK
@@ -104,7 +129,7 @@ Some SMART Backend Services registrations require a public JWKS URL when using `
 
 ```ts
 import { writeFileSync } from "node:fs"
-import fhirStarter from "fhirstarterjs"
+import fhirStarter from "@fhirstarter/backend"
 
 const auth = new fhirStarter({
    clientId: "your-client-id",

@@ -1,6 +1,6 @@
 {
-   "name": "fhirstarterjs",
-   "version": "1.0.9",
+   "name": "@fhirstarter/backend",
+   "version": "1.1.0",
    "description": "SMART on FHIR Backend Services (client credentials) auth lifecycle for any FHIR client — JWT assertion, JWKS, and automatic token refresh.",
    "keywords": [
       "fhir",
@@ -28,13 +28,13 @@
    ],
    "author": "Joshua Faulkenberry <j@joshuafaulkenberry.com> (https://joshuafaulkenberry.com/)",
    "license": "Kopimi",
-   "homepage": "https://github.com/faulkj/fhirStarter#readme",
+   "homepage": "https://github.com/fhirstarterjs/backend#readme",
    "repository": {
       "type": "git",
-      "url": "git+https://github.com/faulkj/fhirStarter.git"
+      "url": "git+https://github.com/fhirstarterjs/backend.git"
    },
    "bugs": {
-      "url": "https://github.com/faulkj/fhirStarter/issues"
+      "url": "https://github.com/fhirstarterjs/backend/issues"
    },
    "type": "module",
    "main": "./dist/fhirstarter.js",
@@ -67,7 +67,7 @@
       "prepack": "npm run build"
    },
    "dependencies": {
-      "jose": "^6.2.3"
+      "jose": "^6.2.4"
    },
    "devDependencies": {
       "@types/node": "^26.1.1",
