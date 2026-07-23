@@ -1,4 +1,4 @@
-import { requestToken } from "./token.js"
+import { coordinatedRequest } from "./coordinate.js"
 
 /** Invoke all refresh callbacks with the new token; callback failures never break auth. */
 export const notifyRefresh = (state: ProviderState, token: string): void => {
@@ -12,7 +12,7 @@ export const notifyRefresh = (state: ProviderState, token: string): void => {
 
 /** Single-flight refresh: coalesce concurrent callers onto one in-flight request. */
 export const doRefresh = (config: AuthConfig, state: ProviderState, cred: ResolvedCredential): Promise<string> =>
-   (state.refreshPromise ??= requestToken(config, state, cred)
+   (state.refreshPromise ??= coordinatedRequest(config, state, cred)
       .then((cache) => {
          state.cache = cache
          state.refreshPromise = null

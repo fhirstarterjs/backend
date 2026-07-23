@@ -23,6 +23,7 @@ proactive token refresh — while staying client-agnostic, so you keep using
 - [Thumbprint](#thumbprint)
 - [JWKS](#jwks)
 - [Key rotation](#key-rotation)
+- [Shared token store](#shared-token-store)
 - [Compatibility](#compatibility)
 - [Scripts](#scripts)
 - [Notes](#notes)
@@ -173,6 +174,28 @@ Sequence: publish the successor in JWKS → wait through the JWKS cache lifetime
 make it active → keep the retired key through the cache lifetime plus the max
 assertion lifetime (5 min), then drop it from `retiredKeys`. Each key is
 published under its own `kid` (its thumbprint unless overridden).
+
+## Shared token store
+
+By default each provider refreshes independently. When you run several processes
+under the same client identity, pass a `tokenStore` so they coordinate: only one
+process fetches a token at a time (via an owner-scoped lease) and the others
+adopt the shared result, avoiding refresh storms.
+
+```ts
+const auth = fhirStarter({
+   clientId: "your-client-id",
+   privateKey: process.env.FHIR_PRIVATE_KEY!,
+   tokenEndpointUrl: "https://auth.example/token",
+   scopes: ["system/Patient.rs"],
+   tokenStore: myRedisStore, // implements the TokenStore interface
+})
+```
+
+`fhirStarter.memoryStore()` is a single-process reference implementation (handy
+for tests). For real multi-process coordination, supply a store backed by Redis,
+a database, or similar. The store contract requires atomic, owner-scoped leases
+and a `setUnderLease` that writes only while the caller still holds the lease.
 
 ## Compatibility
 
