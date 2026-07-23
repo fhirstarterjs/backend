@@ -1,6 +1,7 @@
-// Consumer fixture — WORKING surface. Compiled against the PACKED tarball's published
-// types, not repo-local ambient declarations. The default import must resolve and be
-// callable as a constructor in v1 (this becomes a plain call in 2.0).
+// Consumer fixture — public surface. Compiled against the PACKED tarball's published types.
+// Backend exposes VALUES only (no named type exports), consistent with @fhirstarter/ehr;
+// config types flow structurally from the default export. Callable as a constructor in v1
+// (becomes a plain call in 2.0).
 import fhirStarter from "@fhirstarter/backend"
 
 const auth = new fhirStarter({

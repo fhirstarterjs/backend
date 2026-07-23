@@ -18,7 +18,6 @@ proactive token refresh — while staying client-agnostic, so you keep using
 
 - [Install](#install)
 - [Usage](#usage)
-- [TypeScript types](#typescript-types)
 - [Other FHIR clients](#other-fhir-clients)
 - [API](#api)
 - [Thumbprint](#thumbprint)
@@ -68,14 +67,6 @@ manages the auth lifecycle; the FHIR client does the rest.
 
 `privateKey` can be PEM text, a `Buffer` from `readFileSync`, or a path to a
 PKCS#8 PEM file.
-
-## TypeScript types
-
-If needed, you can import the public types directly:
-
-```ts
-import type { AuthConfig, JwkSet, LiveTokenResponse, Provider } from "@fhirstarter/backend"
-```
 
 ## Other FHIR clients
 

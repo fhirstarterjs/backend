@@ -1,7 +1,7 @@
 // Packed-consumer type-surface test. Packs the real tarball, installs it into an isolated
-// consumer, and type-checks two fixtures against the PUBLISHED types. Locks the current
-// packaging behavior: default import works; README-advertised named type imports do NOT.
-// Slice 7 repairs the exports and flips the negative fixture to expect success.
+// consumer, and type-checks the public surface against the PUBLISHED types. Backend exposes
+// VALUES only (no named type exports) to stay consistent with @fhirstarter/ehr; config types
+// flow structurally from the default export.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
@@ -57,17 +57,6 @@ test("packed default import type-checks against published types", () => {
    try {
       const { ok, out } = typecheck(dir, "default-import.ts")
       assert.ok(ok, `default import should compile; got:\n${out}`)
-   } finally {
-      rmSync(dir, { recursive: true, force: true })
-   }
-})
-
-test("KNOWN DEFECT: named type imports do NOT resolve from the package (v1)", () => {
-   const dir = setupConsumer()
-   try {
-      const { ok, out } = typecheck(dir, "named-types.expect-error.ts")
-      assert.equal(ok, false, "named type imports are expected to fail in v1")
-      assert.match(out, /AuthConfig|has no exported member|Module .* has no/, `expected a missing-export error; got:\n${out}`)
    } finally {
       rmSync(dir, { recursive: true, force: true })
    }
