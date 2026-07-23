@@ -50,6 +50,13 @@ const fhirStarter = (config: AuthConfig): Provider => {
       }
 
    return {
+      serverUrl: config.serverUrl,
+      get accessToken() {
+         return valid()?.accessToken ?? null
+      },
+      get expiresAt() {
+         return valid()?.expiresAt ?? null
+      },
       get token() {
          return valid()?.accessToken ?? null
       },
