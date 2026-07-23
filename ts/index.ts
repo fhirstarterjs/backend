@@ -17,6 +17,7 @@ const fhirStarter = (config: AuthConfig): Provider => {
       state: ProviderState = {
          cache: null,
          refreshPromise: null,
+         startPromise: null,
          refreshTimer: null,
          privateKeyObj: null,
          started: false,
@@ -52,18 +53,19 @@ const fhirStarter = (config: AuthConfig): Provider => {
          return t ? `Bearer ${t}` : null
       },
       getAccessToken,
-      start: async (): Promise<void> => {
-         if (state.started) return
-         state.started = true
-         state.refreshRetryMs = 5_000
-         state.refreshFailed = false
-         try {
-            await getAccessToken()
-         } catch (err) {
-            state.started = false
-            throw err
-         }
-         scheduleRefresh(config, state, pem)
+      start: (): Promise<void> => {
+         if (state.started) return Promise.resolve()
+         return (state.startPromise ??= (async () => {
+            state.refreshRetryMs = 5_000
+            state.refreshFailed = false
+            try {
+               await getAccessToken()
+               state.started = true
+               scheduleRefresh(config, state, pem)
+            } finally {
+               state.startPromise = null
+            }
+         })())
       },
       stop: (): void => {
          state.started = false

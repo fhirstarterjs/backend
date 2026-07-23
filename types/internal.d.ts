@@ -23,6 +23,8 @@ type RefreshCallback = (token: string) => void
 interface ProviderState {
    cache: TokenCache | null
    refreshPromise: Promise<string> | null
+   /** In-flight initial `start()` promise; concurrent callers await this. */
+   startPromise: Promise<void> | null
    refreshTimer: ReturnType<typeof setTimeout> | null
    privateKeyObj: Awaited<ReturnType<typeof import("jose").importPKCS8>> | null
    started: boolean

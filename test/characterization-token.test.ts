@@ -35,6 +35,21 @@ test("start() is idempotent — second call does not re-fetch", async () => {
    }
 })
 
+test("concurrent start() calls share one init and all see the token when resolved", async () => {
+   const mock = mockTokenEndpoint()
+   try {
+      mock.reply(tokenBody(3600))
+      const auth = fhirStarter(testConfig())
+      // Fire two starts before the first resolves; both must await the same init.
+      await Promise.all([auth.start(), auth.start()])
+      assert.equal(mock.calls.length, 1, "only one token request across concurrent starts")
+      assert.ok(auth.token, "token is present once concurrent starts resolve")
+      auth.stop()
+   } finally {
+      mock.restore()
+   }
+})
+
 test("getAccessToken returns cached token before refreshAt (no extra fetch)", async () => {
    const mock = mockTokenEndpoint()
    try {
