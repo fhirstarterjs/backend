@@ -11,5 +11,6 @@
       "types": ["node"],
       "noEmit": true
    },
-   "include": ["ts", "types", "test"]
+   "include": ["ts", "types", "test"],
+   "exclude": ["test/consumer"]
 }
