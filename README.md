@@ -25,6 +25,7 @@ proactive token refresh — while staying client-agnostic, so you keep using
 - [Key rotation](#key-rotation)
 - [Shared token store](#shared-token-store)
 - [Transport & retries](#transport--retries)
+- [Events](#events)
 - [Compatibility](#compatibility)
 - [Scripts](#scripts)
 - [Notes](#notes)
@@ -103,7 +104,10 @@ const res = await fetch(url, {
 | `authorizationHeader` | `string \| null` | `Bearer <token>` or null |
 | `getAccessToken()` | `Promise<string>` | Async valid token with lazy refresh |
 | `tokenResponse()` | `LiveTokenResponse` | Getter-backed token response for `fhirclient` |
-| `onRefresh(callback)` | `() => void` | Subscribe to token updates — returns unsubscribe |
+| `onRefresh(callback)` | `() => void` | Subscribe to token **re-acquisitions** — returns unsubscribe |
+| `onRefreshStart(callback)` | `() => void` | Fires when a token request begins |
+| `onRefreshEnd(callback)` | `() => void` | Fires when a token request ends (success or failure) |
+| `onError(callback)` | `() => void` | Fires on failure with a redacted `RefreshError` |
 | `getJwks()` | `Promise<JwkSet>` | Public JWKS derived from the private key |
 | `fhirStarter.thumbprint(privateKey)` | `string` | RFC 7638 JWK Thumbprint (base64url SHA-256) |
 
@@ -207,6 +211,21 @@ honored when present. Each retry builds a fresh JWT assertion (new `jti`).
 
 Tune via config: `timeoutMs` (per-attempt, default 30000), `maxAttempts`
 (default 3), and `backoffMs` (base delay, default 500).
+
+## Events
+
+`onRefresh(cb)` fires only when a **new** token is acquired after the first —
+not on the initial `start()`, a shared-store load, or a late subscription. Use
+it to push tokens into clients that cache them:
+
+```ts
+auth.onRefresh((token) => (client.bearerToken = token))
+```
+
+`onRefreshStart` / `onRefreshEnd` bracket each token request; `onError` delivers
+a redacted `RefreshError` (`{ message, status? }`) that never contains tokens or
+secrets. All four return an unsubscribe function, and listener exceptions never
+break the auth lifecycle.
 
 ## Compatibility
 

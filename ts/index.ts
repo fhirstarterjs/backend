@@ -2,6 +2,7 @@ import { validateConfig } from "./config.js"
 import { thumbprint } from "./jwt.js"
 import { getJwks } from "./jwks.js"
 import { memoryStore } from "./store.js"
+import { subscribe } from "./events.js"
 import { doRefresh, scheduleRefresh } from "./refresh.js"
 
 /**
@@ -26,7 +27,11 @@ const fhirStarter = (config: AuthConfig): Provider => {
          started: false,
          refreshFailed: false,
          refreshRetryMs: 5_000,
+         acquiredOnce: false,
          refreshCallbacks: new Set(),
+         startListeners: new Set(),
+         endListeners: new Set(),
+         errorListeners: new Set(),
       },
 
       valid = (): TokenCache | null =>
@@ -87,17 +92,10 @@ const fhirStarter = (config: AuthConfig): Provider => {
             return state.cache?.scope
          },
       }),
-      onRefresh: (callback: RefreshCallback): (() => void) => {
-         state.refreshCallbacks.add(callback)
-         const current = valid()?.accessToken
-         if (current)
-            try {
-               callback(current)
-            } catch {
-               /* ignore */
-            }
-         return () => void state.refreshCallbacks.delete(callback)
-      },
+      onRefresh: (callback: RefreshCallback) => subscribe(state.refreshCallbacks, callback),
+      onRefreshStart: (callback: () => void) => subscribe(state.startListeners, callback),
+      onRefreshEnd: (callback: () => void) => subscribe(state.endListeners, callback),
+      onError: (callback: (error: RefreshError) => void) => subscribe(state.errorListeners, callback),
       getJwks: (): Promise<JwkSet> => getJwks(config, cred),
    }
 }

@@ -1,13 +1,11 @@
-// Characterization of v1 fhirStarter callback/lifecycle behavior — including the two
-// quirks the 2.0 plan intends to CHANGE later (onRefresh fires on initial acquisition,
-// and replays the current token to a late subscriber). Locked here so the change is
-// deliberate and visible in a diff.
+// v2 callback/lifecycle semantics: onRefresh fires ONLY on re-acquisition (not the initial
+// token, store loads, or late-subscriber replay). Lifecycle events are covered in events.test.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import fhirStarter from "../dist/index.js"
 import { testConfig, mockTokenEndpoint, tokenBody } from "./helpers.ts"
 
-test("v1 QUIRK: onRefresh fires on the INITIAL start() acquisition", async () => {
+test("onRefresh does NOT fire on the initial start() acquisition", async () => {
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
@@ -15,15 +13,14 @@ test("v1 QUIRK: onRefresh fires on the INITIAL start() acquisition", async () =>
       const seen: string[] = []
       auth.onRefresh((t) => seen.push(t))
       await auth.start()
-      assert.equal(seen.length, 1, "callback fired for the initial token")
-      assert.equal(seen[0], auth.token)
+      assert.equal(seen.length, 0, "no callback for the initial token")
       auth.stop()
    } finally {
       mock.restore()
    }
 })
 
-test("v1 QUIRK: onRefresh replays current token to a LATE subscriber", async () => {
+test("onRefresh does NOT replay the current token to a late subscriber", async () => {
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
@@ -31,15 +28,14 @@ test("v1 QUIRK: onRefresh replays current token to a LATE subscriber", async () 
       await auth.start()
       const seen: string[] = []
       auth.onRefresh((t) => seen.push(t)) // subscribe AFTER token exists
-      assert.equal(seen.length, 1, "late subscriber immediately replayed current token")
-      assert.equal(seen[0], auth.token)
+      assert.equal(seen.length, 0, "no replay to late subscriber")
       auth.stop()
    } finally {
       mock.restore()
    }
 })
 
-test("onRefresh unsubscribe stops further callbacks", async () => {
+test("onRefresh unsubscribe removes the callback", async () => {
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
@@ -48,7 +44,7 @@ test("onRefresh unsubscribe stops further callbacks", async () => {
       const off = auth.onRefresh((t) => seen.push(t))
       await auth.start()
       off()
-      assert.equal(seen.length, 1, "only the initial callback was received")
+      assert.equal(seen.length, 0, "no initial callback under v2 semantics")
       auth.stop()
    } finally {
       mock.restore()

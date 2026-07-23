@@ -71,10 +71,27 @@ interface Provider {
    getAccessToken(): Promise<string>
    /** Returns a getter-backed token response object for use with official `fhirclient`. */
    tokenResponse(): LiveTokenResponse
-   /** Subscribe to token refreshes. Returns an unsubscribe function. */
+   /**
+    * Subscribe to token RE-acquisitions (not the initial token, store loads, or replays).
+    * Returns an unsubscribe function.
+    */
    onRefresh(callback: (token: string) => void): () => void
+   /** Fires when a token request begins. Returns an unsubscribe function. */
+   onRefreshStart(callback: () => void): () => void
+   /** Fires when a token request ends (success or failure). Returns an unsubscribe function. */
+   onRefreshEnd(callback: () => void): () => void
+   /** Fires when a token request fails, with a redacted error. Returns an unsubscribe function. */
+   onError(callback: (error: RefreshError) => void): () => void
    /** Returns the public JWKS derived from the private key. */
    getJwks(): Promise<JwkSet>
+}
+
+/** Redacted error payload for {@link Provider.onError} — never carries tokens or secrets. */
+interface RefreshError {
+   /** Safe, human-readable message with credentials/tokens stripped. */
+   message: string
+   /** HTTP status if the failure came from the token endpoint. */
+   status?: number
 }
 
 /** Getter-backed token response shape compatible with `fhirclient`'s request path. */

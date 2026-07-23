@@ -1,31 +1,29 @@
 import { coordinatedRequest } from "./coordinate.js"
-
-/** Invoke all refresh callbacks with the new token; callback failures never break auth. */
-export const notifyRefresh = (state: ProviderState, token: string): void => {
-   for (const cb of state.refreshCallbacks)
-      try {
-         cb(token)
-      } catch {
-         /* ignore callback failures — auth lifecycle must continue */
-      }
-}
+import { emit, emitVoid, toRefreshError } from "./events.js"
 
 /** Single-flight refresh: coalesce concurrent callers onto one in-flight request. */
-export const doRefresh = (config: AuthConfig, state: ProviderState, cred: ResolvedCredential): Promise<string> =>
-   (state.refreshPromise ??= coordinatedRequest(config, state, cred)
+export const doRefresh = (config: AuthConfig, state: ProviderState, cred: ResolvedCredential): Promise<string> => {
+   if (state.refreshPromise) return state.refreshPromise
+   emitVoid(state.startListeners)
+   return (state.refreshPromise = coordinatedRequest(config, state, cred)
       .then((cache) => {
+         const reacquisition = state.acquiredOnce
          state.cache = cache
          state.refreshPromise = null
          state.refreshFailed = false
          state.refreshRetryMs = 5_000
-         notifyRefresh(state, cache.accessToken)
+         state.acquiredOnce = true
+         if (reacquisition) emit(state.refreshCallbacks, cache.accessToken)
          if (state.started) scheduleRefresh(config, state, cred)
          return cache.accessToken
       })
       .catch((err) => {
          state.refreshPromise = null
+         emit(state.errorListeners, toRefreshError(err))
          throw err
-      }))
+      })
+      .finally(() => emitVoid(state.endListeners)))
+}
 
 /** Schedule the next proactive refresh (or a backoff retry after a failure). */
 export const scheduleRefresh = (config: AuthConfig, state: ProviderState, cred: ResolvedCredential): void => {

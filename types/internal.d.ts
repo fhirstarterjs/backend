@@ -40,5 +40,10 @@ interface ProviderState {
    started: boolean
    refreshFailed: boolean
    refreshRetryMs: number
+   /** True once the first token has been acquired — gates re-acquisition-only onRefresh. */
+   acquiredOnce: boolean
    readonly refreshCallbacks: Set<RefreshCallback>
+   readonly startListeners: Set<() => void>
+   readonly endListeners: Set<() => void>
+   readonly errorListeners: Set<(error: RefreshError) => void>
 }
