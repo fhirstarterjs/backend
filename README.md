@@ -41,9 +41,9 @@ This example uses the official `fhirclient` package as the FHIR client;
 import FHIR from "fhirclient"
 import fhirStarter from "@fhirstarter/backend"
 
-const auth = new fhirStarter({
+const auth = fhirStarter({
    clientId: "your-client-id",
-   privateKey: "./privatekey.pem",
+   privateKey: process.env.FHIR_PRIVATE_KEY!, // base64-encoded PKCS#8 PEM
    tokenEndpointUrl: "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token",
    scopes: ["system/Patient.rs", "system/Observation.rs"],
 })
@@ -89,7 +89,7 @@ const res = await fetch(url, {
 
 ## API
 
-`new fhirStarter(config)`
+`fhirStarter(config)` — returns a provider (no `new`)
 
 | Member | Returns | Description |
 |---|---|---|
@@ -115,13 +115,13 @@ Derive a deterministic `kid` from a private key without instantiating the class:
 ```ts
 import fhirStarter from "@fhirstarter/backend"
 
-const kid = fhirStarter.thumbprint("./privatekey.pem")
-console.log(kid) // base64url SHA-256 of the canonical RSA public JWK
+const kid = fhirStarter.thumbprint(pemOrBuffer)
+console.log(kid) // base64url SHA-256 of the canonical public JWK (RSA or EC)
 ```
 
 This implements RFC 7638 — the SHA-256 of the sorted canonical JWK members
-`{e, kty, n}`, base64url-encoded. Use it as the `keyId` when registering your
-JWKS.
+(`{e, kty, n}` for RSA, `{crv, kty, x, y}` for EC), base64url-encoded. Use it as
+the `keyId` when registering your JWKS.
 
 ## JWKS
 
@@ -132,9 +132,9 @@ Some SMART Backend Services registrations require a public JWKS URL when using
 import { writeFileSync } from "node:fs"
 import fhirStarter from "@fhirstarter/backend"
 
-const auth = new fhirStarter({
+const auth = fhirStarter({
    clientId: "your-client-id",
-   privateKey: "./privatekey.pem",
+   privateKey: process.env.FHIR_PRIVATE_KEY!, // base64-encoded PKCS#8 PEM
    tokenEndpointUrl: "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token",
    scopes: ["system/Patient.rs"],
    keyId: "my-key-id",
@@ -171,5 +171,5 @@ state after a 401, recreate the client instance with `auth.tokenResponse()`.
 - Tokens are cached with separate refresh and expiry timestamps — if a refresh
   fails but the token is not yet expired, the old token remains usable
 - Concurrent callers share a single in-flight token refresh
-- JWT assertions are signed RS384, expire after 5 minutes
-- Requires Node 20+, a PKCS#8 RSA key, and SMART Backend Services scopes
+- JWT assertions are signed RS384 (RSA) or ES384 (P-384 EC), expire after 5 minutes
+- Requires Node 20+, a PKCS#8 RSA or P-384 EC key, and SMART Backend Services scopes

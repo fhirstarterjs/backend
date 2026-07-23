@@ -8,6 +8,14 @@ export const testKeyPem = (): string =>
       publicKeyEncoding: { type: "spki", format: "pem" },
    }).privateKey
 
+/** Generate a fresh P-384 EC PKCS#8 PEM string (for ES384 tests). */
+export const testEcKeyPem = (): string =>
+   generateKeyPairSync("ec", {
+      namedCurve: "P-384",
+      privateKeyEncoding: { type: "pkcs8", format: "pem" },
+      publicKeyEncoding: { type: "spki", format: "pem" },
+   }).privateKey
+
 /** Build a minimal valid private-key AuthConfig around a generated key. */
 export const testConfig = (over: Partial<PrivateKeyAuthConfig> = {}): PrivateKeyAuthConfig => ({
    clientId: "test-client",
