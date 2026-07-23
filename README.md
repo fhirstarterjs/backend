@@ -47,6 +47,7 @@ import FHIR from "fhirclient"
 import fhirStarter from "@fhirstarter/backend"
 
 const auth = fhirStarter({
+   serverUrl: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
    clientId: "your-client-id",
    privateKey: process.env.FHIR_PRIVATE_KEY!, // base64-encoded PKCS#8 PEM
    tokenEndpointUrl: "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token",
@@ -55,17 +56,15 @@ const auth = fhirStarter({
 
 await auth.start()
 
-const client = FHIR.client({
-   serverUrl: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
-   tokenResponse: auth.tokenResponse(),
-})
+const client = FHIR.client(auth.fhirClient)
 
 const bundle = await client.request("Patient?family=Smith")
 ```
 
 `auth.start()` fetches the first token and starts the proactive refresh loop.
-`auth.tokenResponse()` returns a live getter-backed object; `fhirclient` reads
-`access_token` dynamically per request, so it always picks up the latest token.
+`auth.fhirClient` is a ready-to-spread `FHIR.client(...)` argument built from your
+`serverUrl` and a live `tokenResponse`, so `fhirclient` always reads the latest
+token per request.
 
 `fhirStarter` does not fetch FHIR resources and does not bundle a FHIR client. It
 manages the auth lifecycle; the FHIR client does the rest.
@@ -75,20 +74,23 @@ manages the auth lifecycle; the FHIR client does the rest.
 
 ## Other FHIR clients
 
+For raw `fetch` or any HTTP client, spread the current auth headers:
+
+```ts
+const res = await fetch(`${auth.serverUrl}/Patient?family=Smith`, {
+   headers: auth.authHeaders,
+})
+```
+
+`auth.authHeaders` is `{ Authorization: "Bearer <token>" }` when a valid token is
+cached, or `{}` otherwise. Read it per request so it always reflects the latest
+token. `auth.accessToken` and `auth.expiresAt` (epoch ms) expose the raw values.
+
 For clients with a bearer token setter (e.g. `fhir-kit-client`):
 
 ```ts
 const unsubscribe = auth.onRefresh((token) => {
    client.bearerToken = token
-})
-```
-
-For raw `fetch` or any other HTTP client:
-
-```ts
-const token = await auth.getAccessToken()
-const res = await fetch(url, {
-   headers: { Authorization: `Bearer ${token}` },
 })
 ```
 
@@ -100,11 +102,16 @@ const res = await fetch(url, {
 |---|---|---|
 | `start()` | `Promise<void>` | Fetch first token and begin proactive refresh loop |
 | `stop()` | `void` | Clear the refresh timer |
-| `token` | `string \| null` | Current valid token, or null if expired |
+| `serverUrl` | `string` | FHIR base URL from config |
+| `accessToken` | `string \| null` | Current valid token, or null if expired |
+| `expiresAt` | `number \| null` | Epoch ms of actual expiry, or null |
+| `token` | `string \| null` | Alias of `accessToken` |
 | `expiresIn` | `number \| null` | Seconds until actual expiry, or null |
 | `authorizationHeader` | `string \| null` | `Bearer <token>` or null |
 | `getAccessToken()` | `Promise<string>` | Async valid token with lazy refresh |
 | `tokenResponse()` | `LiveTokenResponse` | Getter-backed token response for `fhirclient` |
+| `fhirClient` | `FhirClientState` | Spread into `FHIR.client(...)`; writable outer, live token |
+| `authHeaders` | `AuthHeaders` | `{ Authorization }` for `fetch`, or `{}` when no token |
 | `onRefresh(callback)` | `() => void` | Subscribe to token **re-acquisitions**; returns unsubscribe |
 | `onRefreshStart(callback)` | `() => void` | Fires when a token request begins |
 | `onRefreshEnd(callback)` | `() => void` | Fires when a token request ends (success or failure) |
@@ -254,10 +261,10 @@ so treat a successful `start()` as the true integration check.
 
 ## Compatibility
 
-`tokenResponse()` is designed for `fhirclient.request()`. If a client copies the
-token at construction time rather than reading it per-request, use `onRefresh()`
-to update or recreate that client instead. If `fhirclient` clears its internal
-state after a 401, recreate the client instance with `auth.tokenResponse()`.
+`fhirClient` and `tokenResponse()` are designed for `fhirclient.request()`, which
+reads the token per request. If a client copies the token at construction time
+instead, use `onRefresh()` to update or recreate that client. If `fhirclient`
+clears its internal state after a 401, recreate the client with `auth.fhirClient`.
 
 ## Scripts
 
