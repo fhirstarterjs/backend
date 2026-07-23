@@ -63,7 +63,7 @@
       "check": "tsc --noEmit",
       "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
       "build": "npm run clean && tsc -p tsconfig.build.json",
-      "prepack": "npm run build"
+      "prepare": "npm run build"
    },
    "dependencies": {
       "jose": "^6.2.4"
