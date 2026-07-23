@@ -26,6 +26,7 @@ proactive token refresh — while staying client-agnostic, so you keep using
 - [Shared token store](#shared-token-store)
 - [Transport & retries](#transport--retries)
 - [Events](#events)
+- [Validation](#validation)
 - [Compatibility](#compatibility)
 - [Scripts](#scripts)
 - [Notes](#notes)
@@ -108,6 +109,7 @@ const res = await fetch(url, {
 | `onRefreshStart(callback)` | `() => void` | Fires when a token request begins |
 | `onRefreshEnd(callback)` | `() => void` | Fires when a token request ends (success or failure) |
 | `onError(callback)` | `() => void` | Fires on failure with a redacted `RefreshError` |
+| `validate()` | `ValidationResult` | Offline config check — `{ ok, problems }` (no network) |
 | `getJwks()` | `Promise<JwkSet>` | Public JWKS derived from the private key |
 | `fhirStarter.thumbprint(privateKey)` | `string` | RFC 7638 JWK Thumbprint (base64url SHA-256) |
 
@@ -226,6 +228,21 @@ auth.onRefresh((token) => (client.bearerToken = token))
 a redacted `RefreshError` (`{ message, status? }`) that never contains tokens or
 secrets. All four return an unsubscribe function, and listener exceptions never
 break the auth lifecycle.
+
+## Validation
+
+`auth.validate()` runs a fast, offline check of the config — HTTPS token
+endpoint, non-empty scopes, key parsing, supported algorithm (RS384/ES384), and
+unique `kid`s across active and retired keys. It makes no network calls and
+returns `{ ok, problems }`:
+
+```ts
+const { ok, problems } = auth.validate()
+if (!ok) throw new Error(`Invalid config: ${problems.join("; ")}`)
+```
+
+Actual credential/scope acceptance can only be proven by a real token request,
+so treat a successful `start()` as the true integration check.
 
 ## Compatibility
 

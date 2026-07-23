@@ -70,8 +70,9 @@ test("stale-but-unexpired token is returned when refresh fails", async () => {
    const mock = mockTokenEndpoint()
    try {
       // ttl=2s → refreshAt = expiresAt - min(60s, ttl/2) = now+1s; expiresAt = now+2s.
+      // maxAttempts=1 so the single queued failure isn't retried into a queue-empty error.
       mock.reply(tokenBody(2))
-      const auth = fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig({ maxAttempts: 1 }))
       await auth.start()
       const original = auth.token
       await new Promise((r) => setTimeout(r, 1100)) // past refreshAt, before expiresAt

@@ -50,10 +50,16 @@ const attemptOnce = async (
          error: `Token request failed (${res.status}): ${text}`,
       }
    }
+   let data: TokenResponse
    try {
-      return { cache: toCache(await res.json()) }
+      data = await res.json()
    } catch {
       return { retryable: false, retryAfter: null, error: "Token response is not valid JSON" }
+   }
+   try {
+      return { cache: toCache(data) }
+   } catch (err) {
+      return { retryable: false, retryAfter: null, error: (err as Error).message }
    }
 }
 
@@ -82,7 +88,9 @@ const buildRequest = async (config: AuthConfig, state: ProviderState, cred: Reso
 const toCache = (data: TokenResponse): TokenCache => {
    if (!data.access_token || typeof data.access_token !== "string")
       throw new Error("Token response missing access_token")
-   if (typeof data.expires_in !== "number" || data.expires_in <= 0)
+   if (typeof data.token_type !== "string" || data.token_type.toLowerCase() !== "bearer")
+      throw new Error(`Token response token_type must be Bearer, got ${data.token_type}`)
+   if (typeof data.expires_in !== "number" || !Number.isFinite(data.expires_in) || data.expires_in <= 0)
       throw new Error("Token response has invalid expires_in")
    const
       ttlMs = data.expires_in * 1000,

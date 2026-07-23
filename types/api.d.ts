@@ -82,6 +82,8 @@ interface Provider {
    onRefreshEnd(callback: () => void): () => void
    /** Fires when a token request fails, with a redacted error. Returns an unsubscribe function. */
    onError(callback: (error: RefreshError) => void): () => void
+   /** Run local, offline config validation (no network). Returns collected problems. */
+   validate(): ValidationResult
    /** Returns the public JWKS derived from the private key. */
    getJwks(): Promise<JwkSet>
 }
@@ -92,6 +94,14 @@ interface RefreshError {
    message: string
    /** HTTP status if the failure came from the token endpoint. */
    status?: number
+}
+
+/** Result of local, offline {@link Provider.validate} — no network calls. */
+interface ValidationResult {
+   /** True when no problems were found. */
+   ok: boolean
+   /** Human-readable problem descriptions (empty when `ok`). */
+   problems: string[]
 }
 
 /** Getter-backed token response shape compatible with `fhirclient`'s request path. */

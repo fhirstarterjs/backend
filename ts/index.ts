@@ -3,6 +3,7 @@ import { thumbprint } from "./jwt.js"
 import { getJwks } from "./jwks.js"
 import { memoryStore } from "./store.js"
 import { subscribe } from "./events.js"
+import { validate } from "./validate.js"
 import { doRefresh, scheduleRefresh } from "./refresh.js"
 
 /**
@@ -96,6 +97,7 @@ const fhirStarter = (config: AuthConfig): Provider => {
       onRefreshStart: (callback: () => void) => subscribe(state.startListeners, callback),
       onRefreshEnd: (callback: () => void) => subscribe(state.endListeners, callback),
       onError: (callback: (error: RefreshError) => void) => subscribe(state.errorListeners, callback),
+      validate: (): ValidationResult => validate(config),
       getJwks: (): Promise<JwkSet> => getJwks(config, cred),
    }
 }
