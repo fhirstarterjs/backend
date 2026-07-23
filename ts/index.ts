@@ -1,6 +1,7 @@
 import { validateConfig } from "./config.js"
 import { thumbprint } from "./jwt.js"
 import { getJwks } from "./jwks.js"
+import { memoryStore } from "./store.js"
 import { doRefresh, scheduleRefresh } from "./refresh.js"
 
 /**
@@ -102,5 +103,6 @@ const fhirStarter = (config: AuthConfig): Provider => {
 }
 
 fhirStarter.thumbprint = thumbprint
+fhirStarter.memoryStore = memoryStore
 
 export default fhirStarter

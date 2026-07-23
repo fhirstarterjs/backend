@@ -6,6 +6,8 @@ interface AuthConfigBase {
    tokenEndpointUrl: string
    /** SMART scopes to request — space-delimited string or array */
    scopes: string | string[]
+   /** Optional shared store to coordinate token refresh across processes. */
+   tokenStore?: TokenStore
 }
 
 /** SMART Backend Services config: private-key JWT client assertion (RFC 7523). Default. */
