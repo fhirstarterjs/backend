@@ -7,10 +7,8 @@
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true,
       "skipLibCheck": true,
-      "allowImportingTsExtensions": true,
       "types": ["node"],
       "noEmit": true
    },
-   "include": ["ts", "types", "test"],
-   "exclude": ["test/consumer"]
+   "include": ["ts", "types"]
 }
