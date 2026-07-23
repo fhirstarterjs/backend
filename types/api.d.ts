@@ -16,6 +16,14 @@ interface AuthConfigBase {
    backoffMs?: number
 }
 
+/** A retired signing key paired with the explicit `keyId` it was published under while active. */
+interface RetiredKey {
+   /** Public or private PEM/Buffer/base64 (only public members are published). */
+   key: string | Buffer
+   /** kid to publish for this key. Defaults to its RFC 7638 thumbprint when omitted. */
+   keyId?: string
+}
+
 /** SMART Backend Services config: private-key JWT client assertion (RFC 7523). Default. */
 interface PrivateKeyAuthConfig extends AuthConfigBase {
    /** Token-endpoint auth method. Omit or set explicitly for SMART Backend Services. */
@@ -26,10 +34,12 @@ interface PrivateKeyAuthConfig extends AuthConfigBase {
    keyId?: string
    /**
     * Retired public keys to keep publishing in JWKS during rotation overlap. Each may be a
-    * public or private PEM/Buffer/base64 (only public members are published). Never used to
-    * sign. Retain through JWKS cache lifetime + max assertion lifetime, then remove.
+    * public or private PEM/Buffer/base64 (only public members are published), or a
+    * {@link RetiredKey} pairing the key with an explicit `keyId` (to match a custom kid
+    * scheme used when the key was active). Never used to sign. Retain through JWKS cache
+    * lifetime + max assertion lifetime, then remove.
     */
-   retiredKeys?: (string | Buffer)[]
+   retiredKeys?: (string | Buffer | RetiredKey)[]
    /** JWK Set URL registered with your authorization server — included as `jku` in JWT header */
    jwksUrl?: string
    clientSecret?: never

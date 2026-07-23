@@ -182,6 +182,14 @@ make it active → keep the retired key through the cache lifetime plus the max
 assertion lifetime (5 min), then drop it from `retiredKeys`. Each key is
 published under its own `kid` (its thumbprint unless overridden).
 
+If a retired key was published under a custom `kid` while active, pass it as a
+`{ key, keyId }` pair so `getJwks()` republishes it under the same `kid`
+(otherwise it falls back to the thumbprint):
+
+```ts
+retiredKeys: [{ key: process.env.FHIR_OLD_KEY!, keyId: "old-kid" }],
+```
+
 ## Shared token store
 
 By default each provider refreshes independently. When you run several processes

@@ -24,7 +24,10 @@ const validateKeys = (config: PrivateKeyAuthConfig, problems: string[]): void =>
    const
       inputs: { label: string, key: string | Buffer, kid?: string }[] = [
          { label: "privateKey", key: config.privateKey, kid: config.keyId },
-         ...(config.retiredKeys ?? []).map((key, i) => ({ label: `retiredKeys[${i}]`, key })),
+         ...(config.retiredKeys ?? []).map((k, i) =>
+            typeof k === "string" || Buffer.isBuffer(k)
+               ? { label: `retiredKeys[${i}]`, key: k }
+               : { label: `retiredKeys[${i}]`, key: k.key, kid: k.keyId }),
       ],
       kids = new Set<string>()
    for (const { label, key, kid } of inputs)

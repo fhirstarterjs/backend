@@ -26,7 +26,8 @@ export const getJwks = async (config: AuthConfig, cred: ResolvedCredential): Pro
       throw new Error("getJwks: not available for client-secret auth (no signing key)")
    const
       active = await publicJwk(cred.pem, config.keyId),
-      retired = await Promise.all((config.retiredKeys ?? []).map((k) => publicJwk(k))),
+      retired = await Promise.all((config.retiredKeys ?? []).map((k) =>
+         typeof k === "string" || Buffer.isBuffer(k) ? publicJwk(k) : publicJwk(k.key, k.keyId))),
       seen = new Set<string>()
    return {
       keys: [active, ...retired].filter((jwk) => {
