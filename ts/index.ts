@@ -47,7 +47,21 @@ const fhirStarter = (config: AuthConfig): Provider => {
             if (stale && Date.now() < stale.expiresAt) return stale.accessToken
             throw err
          }
-      }
+      },
+
+      tokenResponse = (): LiveTokenResponse => ({
+         token_type: "bearer",
+         get access_token() {
+            return valid()?.accessToken ?? undefined
+         },
+         get expires_in() {
+            const c = valid()
+            return c ? Math.ceil((c.expiresAt - Date.now()) / 1000) : undefined
+         },
+         get scope() {
+            return state.cache?.scope
+         },
+      })
 
    return {
       serverUrl: config.serverUrl,
@@ -87,19 +101,14 @@ const fhirStarter = (config: AuthConfig): Provider => {
          state.started = false
          state.refreshTimer && (clearTimeout(state.refreshTimer), (state.refreshTimer = null))
       },
-      tokenResponse: (): LiveTokenResponse => ({
-         token_type: "bearer",
-         get access_token() {
-            return valid()?.accessToken ?? undefined
-         },
-         get expires_in() {
-            const c = valid()
-            return c ? Math.ceil((c.expiresAt - Date.now()) / 1000) : undefined
-         },
-         get scope() {
-            return state.cache?.scope
-         },
-      }),
+      tokenResponse,
+      get fhirClient() {
+         return { serverUrl: config.serverUrl, tokenResponse: tokenResponse() }
+      },
+      get authHeaders() {
+         const t = valid()?.accessToken
+         return t ? { Authorization: `Bearer ${t}` } : {}
+      },
       onRefresh: (callback: RefreshCallback) => subscribe(state.refreshCallbacks, callback),
       onRefreshStart: (callback: () => void) => subscribe(state.startListeners, callback),
       onRefreshEnd: (callback: () => void) => subscribe(state.endListeners, callback),

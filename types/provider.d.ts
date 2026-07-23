@@ -21,6 +21,13 @@ interface Provider {
    /** Returns a getter-backed token response object for use with official `fhirclient`. */
    tokenResponse(): LiveTokenResponse
    /**
+    * Fresh writable `ClientState` for `FHIR.client(...)`. The outer object is writable so
+    * `fhirclient` may reassign `tokenResponse` on a 401; the nested value is live.
+    */
+   readonly fhirClient: FhirClientState
+   /** Current `{ Authorization }` for `fetch`, or `{}` when no valid token. */
+   readonly authHeaders: AuthHeaders
+   /**
     * Subscribe to token RE-acquisitions (not the initial token, store loads, or replays).
     * Returns an unsubscribe function.
     */
@@ -59,4 +66,15 @@ interface LiveTokenResponse {
    readonly access_token: string | undefined
    readonly expires_in: number | undefined
    readonly scope: string | undefined
+}
+
+/** Minimal `fhirclient` `ClientState` spread into `FHIR.client(...)` (structural, no dep). */
+interface FhirClientState {
+   serverUrl: string
+   tokenResponse: LiveTokenResponse
+}
+
+/** Fetch-ready headers: `{ Authorization }` when authed, else empty. */
+interface AuthHeaders {
+   Authorization?: string
 }
