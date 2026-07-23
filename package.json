@@ -1,7 +1,7 @@
 {
    "name": "@fhirstarter/backend",
    "version": "2.0.0",
-   "description": "SMART on FHIR Backend Services (client credentials) auth lifecycle for any FHIR client — JWT assertion, JWKS, and automatic token refresh.",
+   "description": "Thin, plug-and-play SMART on FHIR Backend Services (client credentials) library. Handles JWT assertion, JWKS, and proactive token refresh, then hands off to any FHIR client.",
    "keywords": [
       "fhir",
       "smart-on-fhir",

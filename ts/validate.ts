@@ -6,6 +6,11 @@ export const validate = (config: AuthConfig): ValidationResult => {
    const problems: string[] = []
 
    try {
+      if (new URL(config.serverUrl).protocol !== "https:") problems.push("serverUrl must use https")
+   } catch {
+      problems.push(`serverUrl is not a valid URL: ${config.serverUrl}`)
+   }
+   try {
       if (new URL(config.tokenEndpointUrl).protocol !== "https:")
          problems.push("tokenEndpointUrl must use https")
    } catch {

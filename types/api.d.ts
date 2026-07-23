@@ -1,5 +1,7 @@
 /** Fields common to every auth configuration. */
 interface AuthConfigBase {
+   /** FHIR base URL (server root) your client will call after auth */
+   serverUrl: string
    /** App client_id registered with your FHIR authorization server */
    clientId: string
    /** OAuth 2.0 token endpoint URL */

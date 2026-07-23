@@ -20,9 +20,15 @@ export const resolvePrivateKey = (privateKey: string | Buffer): string => {
 /** Validate an AuthConfig and return the resolved credential. Throws on any problem. */
 export const validateConfig = (config: AuthConfig): ResolvedCredential => {
    if (!config.clientId) throw new Error("AuthConfig: clientId is required")
+   if (!config.serverUrl) throw new Error("AuthConfig: serverUrl is required")
    if (!config.tokenEndpointUrl) throw new Error("AuthConfig: tokenEndpointUrl is required")
    if (normalizeScopes(config.scopes).length === 0)
       throw new Error("AuthConfig: at least one scope is required")
+   try {
+      new URL(config.serverUrl)
+   } catch {
+      throw new Error(`AuthConfig: serverUrl is not a valid URL: ${config.serverUrl}`)
+   }
    try {
       new URL(config.tokenEndpointUrl)
    } catch {
