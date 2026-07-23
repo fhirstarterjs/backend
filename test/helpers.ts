@@ -39,10 +39,11 @@ export const mockTokenEndpoint = (): TokenEndpointMock => {
       headers.push((init?.headers as Record<string, string>) ?? {})
       const next = queue.shift()
       if (!next) throw new Error("mockTokenEndpoint: no queued response")
-      const { status, body } = next()
+      const { status, body, retryAfter } = next()
       return {
          ok: status >= 200 && status < 300,
          status,
+         headers: { get: (name: string) => (name.toLowerCase() === "retry-after" ? retryAfter ?? null : null) },
          json: async () => body,
          text: async () => JSON.stringify(body),
       }
@@ -53,8 +54,8 @@ export const mockTokenEndpoint = (): TokenEndpointMock => {
       headers,
       restore,
       reply: (body: object, status = 200) => void queue.push(() => ({ status, body })),
-      fail: (status = 500, body: object = { error: "server_error" }) =>
-         void queue.push(() => ({ status, body })),
+      fail: (status = 500, body: object = { error: "server_error" }, retryAfter?: string) =>
+         void queue.push(() => ({ status, body, retryAfter })),
       throwNetwork: (message = "network down") =>
          void queue.push(() => {
             throw new Error(message)

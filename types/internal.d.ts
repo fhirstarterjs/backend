@@ -24,6 +24,11 @@ type ResolvedCredential =
    | { kind: "private_key_jwt", pem: string }
    | { kind: "client_secret_basic" | "client_secret_post", secret: string }
 
+/** Outcome of a single token-request attempt: success cache, or a classified failure. */
+type AttemptOutcome =
+   | { cache: TokenCache }
+   | { retryable: boolean, retryAfter: number | null, error: string }
+
 /** Mutable per-provider state shared across the closure helpers. */
 interface ProviderState {
    cache: TokenCache | null

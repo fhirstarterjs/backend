@@ -8,6 +8,12 @@ interface AuthConfigBase {
    scopes: string | string[]
    /** Optional shared store to coordinate token refresh across processes. */
    tokenStore?: TokenStore
+   /** Per-attempt timeout in ms. Default 30000. */
+   timeoutMs?: number
+   /** Max token-request attempts (including the first). Default 3. */
+   maxAttempts?: number
+   /** Base backoff in ms between retries (exponential + jitter). Default 500. */
+   backoffMs?: number
 }
 
 /** SMART Backend Services config: private-key JWT client assertion (RFC 7523). Default. */

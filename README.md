@@ -24,6 +24,7 @@ proactive token refresh — while staying client-agnostic, so you keep using
 - [JWKS](#jwks)
 - [Key rotation](#key-rotation)
 - [Shared token store](#shared-token-store)
+- [Transport & retries](#transport--retries)
 - [Compatibility](#compatibility)
 - [Scripts](#scripts)
 - [Notes](#notes)
@@ -196,6 +197,16 @@ const auth = fhirStarter({
 for tests). For real multi-process coordination, supply a store backed by Redis,
 a database, or similar. The store contract requires atomic, owner-scoped leases
 and a `setUnderLease` that writes only while the caller still holds the lease.
+
+## Transport & retries
+
+Token requests retry transient failures with exponential backoff and jitter.
+Only network errors and HTTP 408/429/5xx are retried; permanent 4xx such as
+`invalid_client` or `invalid_scope` fail immediately. A `Retry-After` header is
+honored when present. Each retry builds a fresh JWT assertion (new `jti`).
+
+Tune via config: `timeoutMs` (per-attempt, default 30000), `maxAttempts`
+(default 3), and `backoffMs` (base delay, default 500).
 
 ## Compatibility
 
