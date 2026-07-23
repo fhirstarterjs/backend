@@ -1,26 +1,38 @@
-import { normalizeScopes } from "./config.js"
+import { normalizeScopes, isKeyConfig } from "./config.js"
 import { buildJwt } from "./jwt.js"
 
 /** Request a fresh access token from the endpoint and return a validated cache entry. */
 export const requestToken = async (
    config: AuthConfig,
    state: ProviderState,
-   pem: string,
+   cred: ResolvedCredential,
 ): Promise<TokenCache> => {
    const
-      jwt = await buildJwt(config, state, pem),
       body = new URLSearchParams({
          grant_type: "client_credentials",
-         client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-         client_assertion: jwt,
          scope: normalizeScopes(config.scopes).join(" "),
       }),
-      res = await fetch(config.tokenEndpointUrl, {
-         method: "POST",
-         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-         body,
-         signal: AbortSignal.timeout(30_000),
-      })
+      headers: Record<string, string> = { "Content-Type": "application/x-www-form-urlencoded" }
+
+   if (cred.kind === "private_key_jwt" && isKeyConfig(config)) {
+      body.set("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
+      body.set("client_assertion", await buildJwt(config, state, cred.pem))
+   } else if (cred.kind === "client_secret_post") {
+      body.set("client_id", config.clientId)
+      body.set("client_secret", cred.secret)
+   } else if (cred.kind === "client_secret_basic") {
+      const basic = Buffer.from(
+         `${encodeURIComponent(config.clientId)}:${encodeURIComponent(cred.secret)}`,
+      ).toString("base64")
+      headers.Authorization = `Basic ${basic}`
+   }
+
+   const res = await fetch(config.tokenEndpointUrl, {
+      method: "POST",
+      headers,
+      body,
+      signal: AbortSignal.timeout(30_000),
+   })
 
    if (!res.ok) {
       const text = await res.text().catch(() => "(no body)")

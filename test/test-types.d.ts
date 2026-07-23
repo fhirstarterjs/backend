@@ -8,6 +8,8 @@ interface TokenFetchResult {
 interface TokenEndpointMock {
    /** Bodies of each token request received, parsed as form params. */
    calls: URLSearchParams[]
+   /** Headers of each token request received. */
+   headers: Record<string, string>[]
    /** Restore the original global `fetch`. */
    restore: () => void
    /** Queue a successful (or explicit-status) JSON response. */

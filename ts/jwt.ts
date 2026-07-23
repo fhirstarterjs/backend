@@ -1,14 +1,14 @@
 import { importPKCS8, exportJWK, SignJWT, type JWTHeaderParameters } from "jose"
 import { createHash, createPrivateKey, createPublicKey, randomUUID } from "node:crypto"
 import type { PublicKeyInput } from "node:crypto"
-import { resolvePrivateKey } from "./config.js"
+import { resolvePrivateKey, isKeyConfig } from "./config.js"
 
 /** Import (and memoize) the PKCS#8 private key as a jose CryptoKey for RS384 signing. */
 export const getPrivateKey = async (state: ProviderState, pem: string) =>
    (state.privateKeyObj ??= await importPKCS8(pem, "RS384", { extractable: true }))
 
-/** Build a signed client-assertion JWT (RFC 7523) for the token endpoint. */
-export const buildJwt = async (config: AuthConfig, state: ProviderState, pem: string): Promise<string> => {
+/** Build a signed client-assertion JWT (RFC 7523) for the token endpoint (key mode only). */
+export const buildJwt = async (config: PrivateKeyAuthConfig, state: ProviderState, pem: string): Promise<string> => {
    const
       { clientId, tokenEndpointUrl, keyId, jwksUrl } = config,
       privateKey = await getPrivateKey(state, pem),
@@ -23,12 +23,14 @@ export const buildJwt = async (config: AuthConfig, state: ProviderState, pem: st
 }
 
 /** Derive the public JWKS from the configured private key, stripping private members. */
-export const getJwks = async (config: AuthConfig, state: ProviderState, pem: string): Promise<JwkSet> => {
-   const jwk = await exportJWK(await getPrivateKey(state, pem))
+export const getJwks = async (config: AuthConfig, state: ProviderState, cred: ResolvedCredential): Promise<JwkSet> => {
+   if (cred.kind !== "private_key_jwt")
+      throw new Error("getJwks: not available for client-secret auth (no signing key)")
+   const jwk = await exportJWK(await getPrivateKey(state, cred.pem))
    for (const priv of ["d", "p", "q", "dp", "dq", "qi"] as const) delete jwk[priv]
    jwk.alg = "RS384"
    jwk.use = "sig"
-   if (config.keyId) jwk.kid = config.keyId
+   if (isKeyConfig(config) && config.keyId) jwk.kid = config.keyId
    return { keys: [jwk] }
 }
 

@@ -8,8 +8,8 @@ export const testKeyPem = (): string =>
       publicKeyEncoding: { type: "spki", format: "pem" },
    }).privateKey
 
-/** Build a minimal valid AuthConfig around a generated key. */
-export const testConfig = (over: Partial<AuthConfig> = {}): AuthConfig => ({
+/** Build a minimal valid private-key AuthConfig around a generated key. */
+export const testConfig = (over: Partial<PrivateKeyAuthConfig> = {}): PrivateKeyAuthConfig => ({
    clientId: "test-client",
    privateKey: testKeyPem(),
    tokenEndpointUrl: "https://auth.example/token",
@@ -21,12 +21,14 @@ export const testConfig = (over: Partial<AuthConfig> = {}): AuthConfig => ({
 export const mockTokenEndpoint = (): TokenEndpointMock => {
    const
       calls: URLSearchParams[] = [],
+      headers: Record<string, string>[] = [],
       queue: (() => TokenFetchResult)[] = [],
       original = globalThis.fetch,
       restore = (): void => void (globalThis.fetch = original)
 
    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
       calls.push(new URLSearchParams((init?.body as string) ?? ""))
+      headers.push((init?.headers as Record<string, string>) ?? {})
       const next = queue.shift()
       if (!next) throw new Error("mockTokenEndpoint: no queued response")
       const { status, body } = next()
@@ -40,6 +42,7 @@ export const mockTokenEndpoint = (): TokenEndpointMock => {
 
    return {
       calls,
+      headers,
       restore,
       reply: (body: object, status = 200) => void queue.push(() => ({ status, body })),
       fail: (status = 500, body: object = { error: "server_error" }) =>

@@ -19,6 +19,11 @@ interface TokenCache {
 
 type RefreshCallback = (token: string) => void
 
+/** Resolved credential after config validation — either a private key or a client secret. */
+type ResolvedCredential =
+   | { kind: "private_key_jwt", pem: string }
+   | { kind: "client_secret_basic" | "client_secret_post", secret: string }
+
 /** Mutable per-provider state shared across the closure helpers. */
 interface ProviderState {
    cache: TokenCache | null

@@ -5,15 +5,16 @@ import { doRefresh, scheduleRefresh } from "./refresh.js"
 /**
  * Create a SMART Backend Services auth provider.
  *
- * Manages client-credentials token acquisition and proactive refresh using a private RSA key
- * and the JWT Bearer client-assertion flow (RFC 7523). Each call returns an independent
- * provider closing over its own private state, so one process can run many providers.
- * @param config - Auth configuration (client ID, private key, token endpoint, scopes).
+ * Manages client-credentials token acquisition and proactive refresh. Uses private-key JWT
+ * client assertions (RFC 7523) by default, or a client secret for non-SMART OAuth servers.
+ * Each call returns an independent provider closing over its own private state, so one
+ * process can run many providers.
+ * @param config - Auth configuration (client ID, credential, token endpoint, scopes).
  * @throws If any required field is missing, blank, or invalid.
  */
 const fhirStarter = (config: AuthConfig): Provider => {
    const
-      pem = validateConfig(config),
+      cred = validateConfig(config),
       state: ProviderState = {
          cache: null,
          refreshPromise: null,
@@ -33,7 +34,7 @@ const fhirStarter = (config: AuthConfig): Provider => {
          if (state.cache && Date.now() < state.cache.refreshAt) return state.cache.accessToken
          const stale = state.cache
          try {
-            return await doRefresh(config, state, pem)
+            return await doRefresh(config, state, cred)
          } catch (err) {
             if (stale && Date.now() < stale.expiresAt) return stale.accessToken
             throw err
@@ -61,7 +62,7 @@ const fhirStarter = (config: AuthConfig): Provider => {
             try {
                await getAccessToken()
                state.started = true
-               scheduleRefresh(config, state, pem)
+               scheduleRefresh(config, state, cred)
             } finally {
                state.startPromise = null
             }
@@ -95,7 +96,7 @@ const fhirStarter = (config: AuthConfig): Provider => {
             }
          return () => void state.refreshCallbacks.delete(callback)
       },
-      getJwks: (): Promise<JwkSet> => getJwks(config, state, pem),
+      getJwks: (): Promise<JwkSet> => getJwks(config, state, cred),
    }
 }
 

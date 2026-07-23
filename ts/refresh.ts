@@ -11,15 +11,15 @@ export const notifyRefresh = (state: ProviderState, token: string): void => {
 }
 
 /** Single-flight refresh: coalesce concurrent callers onto one in-flight request. */
-export const doRefresh = (config: AuthConfig, state: ProviderState, pem: string): Promise<string> =>
-   (state.refreshPromise ??= requestToken(config, state, pem)
+export const doRefresh = (config: AuthConfig, state: ProviderState, cred: ResolvedCredential): Promise<string> =>
+   (state.refreshPromise ??= requestToken(config, state, cred)
       .then((cache) => {
          state.cache = cache
          state.refreshPromise = null
          state.refreshFailed = false
          state.refreshRetryMs = 5_000
          notifyRefresh(state, cache.accessToken)
-         if (state.started) scheduleRefresh(config, state, pem)
+         if (state.started) scheduleRefresh(config, state, cred)
          return cache.accessToken
       })
       .catch((err) => {
@@ -28,7 +28,7 @@ export const doRefresh = (config: AuthConfig, state: ProviderState, pem: string)
       }))
 
 /** Schedule the next proactive refresh (or a backoff retry after a failure). */
-export const scheduleRefresh = (config: AuthConfig, state: ProviderState, pem: string): void => {
+export const scheduleRefresh = (config: AuthConfig, state: ProviderState, cred: ResolvedCredential): void => {
    if (!state.started) return
    if (state.refreshTimer) clearTimeout(state.refreshTimer)
    const delay =
@@ -37,11 +37,11 @@ export const scheduleRefresh = (config: AuthConfig, state: ProviderState, pem: s
          : Math.max(1_000, state.cache.refreshAt - Date.now())
    state.refreshTimer = setTimeout(async () => {
       try {
-         await doRefresh(config, state, pem)
+         await doRefresh(config, state, cred)
       } catch {
          state.refreshFailed = true
          state.refreshRetryMs = Math.min(state.refreshRetryMs * 2, 60_000)
-         scheduleRefresh(config, state, pem)
+         scheduleRefresh(config, state, cred)
       }
    }, delay)
    state.refreshTimer.unref?.()
