@@ -22,6 +22,7 @@ proactive token refresh — while staying client-agnostic, so you keep using
 - [API](#api)
 - [Thumbprint](#thumbprint)
 - [JWKS](#jwks)
+- [Key rotation](#key-rotation)
 - [Compatibility](#compatibility)
 - [Scripts](#scripts)
 - [Notes](#notes)
@@ -148,7 +149,30 @@ writeFileSync("./jwks.json", JSON.stringify(jwks, null, 3))
 
 Host `jwks.json` at the exact URL you register with your authorization server,
 then pass that URL as `jwksUrl`. If you set `keyId`, the generated key includes
-`kid`, and signed JWTs use the same `kid` header.
+`kid`, and signed JWTs use the same `kid` header. If you omit `keyId`, the `kid`
+defaults to the key's RFC 7638 thumbprint.
+
+## Key rotation
+
+To rotate without downtime, publish the new key alongside the old one during an
+overlap window. Set the new key as `privateKey` (signing switches to it
+immediately) and list the previous key in `retiredKeys` so `getJwks()` keeps
+publishing its public JWK for verifiers that cached the old JWKS:
+
+```ts
+const auth = fhirStarter({
+   clientId: "your-client-id",
+   privateKey: process.env.FHIR_NEW_KEY!,      // active — signs all assertions
+   retiredKeys: [process.env.FHIR_OLD_KEY!],   // publish-only, never signs
+   tokenEndpointUrl: "https://auth.example/token",
+   scopes: ["system/Patient.rs"],
+})
+```
+
+Sequence: publish the successor in JWKS → wait through the JWKS cache lifetime →
+make it active → keep the retired key through the cache lifetime plus the max
+assertion lifetime (5 min), then drop it from `retiredKeys`. Each key is
+published under its own `kid` (its thumbprint unless overridden).
 
 ## Compatibility
 

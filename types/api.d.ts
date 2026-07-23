@@ -12,10 +12,16 @@ interface AuthConfigBase {
 interface PrivateKeyAuthConfig extends AuthConfigBase {
    /** Token-endpoint auth method. Omit or set explicitly for SMART Backend Services. */
    clientAuthMethod?: "private_key_jwt"
-   /** RSA private key as PKCS#8 PEM text, a Buffer, or base64-encoded PEM */
+   /** Active signing key: PKCS#8 PEM text, a Buffer, or base64-encoded PEM (RSA or P-384 EC) */
    privateKey: string | Buffer
-   /** Key ID — set when using a registered JWKS URL */
+   /** Key ID for the active key. Defaults to its RFC 7638 thumbprint. */
    keyId?: string
+   /**
+    * Retired public keys to keep publishing in JWKS during rotation overlap. Each may be a
+    * public or private PEM/Buffer/base64 (only public members are published). Never used to
+    * sign. Retain through JWKS cache lifetime + max assertion lifetime, then remove.
+    */
+   retiredKeys?: (string | Buffer)[]
    /** JWK Set URL registered with your authorization server — included as `jku` in JWT header */
    jwksUrl?: string
    clientSecret?: never

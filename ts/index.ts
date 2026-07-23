@@ -1,5 +1,6 @@
 import { validateConfig } from "./config.js"
-import { getJwks, thumbprint } from "./jwt.js"
+import { thumbprint } from "./jwt.js"
+import { getJwks } from "./jwks.js"
 import { doRefresh, scheduleRefresh } from "./refresh.js"
 
 /**
@@ -96,7 +97,7 @@ const fhirStarter = (config: AuthConfig): Provider => {
             }
          return () => void state.refreshCallbacks.delete(callback)
       },
-      getJwks: (): Promise<JwkSet> => getJwks(config, state, cred),
+      getJwks: (): Promise<JwkSet> => getJwks(config, cred),
    }
 }
 

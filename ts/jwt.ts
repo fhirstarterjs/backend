@@ -1,7 +1,7 @@
-import { importPKCS8, exportJWK, SignJWT, type JWTHeaderParameters } from "jose"
+import { importPKCS8, SignJWT, type JWTHeaderParameters } from "jose"
 import { createHash, createPrivateKey, createPublicKey, randomUUID } from "node:crypto"
 import type { KeyObject, PublicKeyInput } from "node:crypto"
-import { resolvePrivateKey, isKeyConfig } from "./config.js"
+import { resolvePrivateKey } from "./config.js"
 
 /** Infer the SMART signing algorithm from key material: RSA→RS384, P-384 EC→ES384. */
 export const keyAlg = (pem: string): "RS384" | "ES384" => {
@@ -24,26 +24,13 @@ export const buildJwt = async (config: PrivateKeyAuthConfig, state: ProviderStat
    const
       { clientId, tokenEndpointUrl, keyId, jwksUrl } = config,
       privateKey = await getPrivateKey(state, pem),
-      header: JWTHeaderParameters = { alg: keyAlg(pem), typ: "JWT" }
-   if (keyId) header.kid = keyId
+      header: JWTHeaderParameters = { alg: keyAlg(pem), typ: "JWT", kid: keyId ?? thumbprint(pem) }
    if (jwksUrl) header.jku = jwksUrl
    return new SignJWT({ iss: clientId, sub: clientId, aud: tokenEndpointUrl, jti: randomUUID() })
       .setProtectedHeader(header)
       .setIssuedAt()
       .setExpirationTime("5m")
       .sign(privateKey)
-}
-
-/** Derive the public JWKS from the configured private key, stripping private members. */
-export const getJwks = async (config: AuthConfig, state: ProviderState, cred: ResolvedCredential): Promise<JwkSet> => {
-   if (cred.kind !== "private_key_jwt")
-      throw new Error("getJwks: not available for client-secret auth (no signing key)")
-   const jwk = await exportJWK(await getPrivateKey(state, cred.pem))
-   for (const priv of ["d", "p", "q", "dp", "dq", "qi"] as const) delete jwk[priv]
-   jwk.alg = keyAlg(cred.pem)
-   jwk.use = "sig"
-   if (isKeyConfig(config) && config.keyId) jwk.kid = config.keyId
-   return { keys: [jwk] }
 }
 
 /** RFC 7638 JWK Thumbprint (SHA-256 of canonical public members, base64url) for RSA or EC. */
