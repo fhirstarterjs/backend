@@ -1,21 +1,16 @@
-import { readFileSync } from "node:fs"
-
 /** Split a scope string or array into a deduplicated-order list of non-empty scopes. */
 export const normalizeScopes = (scopes: string | string[]): string[] =>
    Array.isArray(scopes) ? scopes.filter(Boolean) : scopes.split(/\s+/).filter(Boolean)
 
-/** Resolve a private key input (Buffer, PEM text, or file path) to trimmed PEM text. */
+/** Resolve a private key input (Buffer, raw PEM, or base64-encoded PEM) to PEM text. */
 export const resolvePrivateKey = (privateKey: string | Buffer): string => {
-   if (Buffer.isBuffer(privateKey)) return privateKey.toString("utf-8").trim()
-   const trimmed = privateKey.trim()
-   if (trimmed.includes("-----BEGIN")) return trimmed
-   try {
-      return readFileSync(trimmed, "utf-8").trim()
-   } catch {
-      throw new Error(
-         `AuthConfig: privateKey must be PEM text, a Buffer, or a readable file path: ${trimmed}`,
-      )
-   }
+   const raw = Buffer.isBuffer(privateKey) ? privateKey.toString("utf-8") : privateKey
+   if (raw.includes("-----BEGIN")) return raw.trim()
+   const decoded = Buffer.from(raw.replace(/\s/g, ""), "base64").toString("utf-8").trim()
+   if (decoded.includes("-----BEGIN")) return decoded
+   throw new Error(
+      "AuthConfig: privateKey must be a PKCS#8 PEM, a Buffer, or base64-encoded PEM (file paths are not supported)",
+   )
 }
 
 /** Validate an AuthConfig and return its resolved private-key text. Throws on any problem. */

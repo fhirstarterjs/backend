@@ -65,8 +65,8 @@ const bundle = await client.request("Patient?family=Smith")
 `fhirStarter` does not fetch FHIR resources and does not bundle a FHIR client. It
 manages the auth lifecycle; the FHIR client does the rest.
 
-`privateKey` can be PEM text, a `Buffer` from `readFileSync`, or a path to a
-PKCS#8 PEM file.
+`privateKey` can be PKCS#8 PEM text, a `Buffer`, or a base64-encoded PEM string
+(the preferred form for environment variables). File paths are not supported.
 
 ## Other FHIR clients
 

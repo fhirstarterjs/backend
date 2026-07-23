@@ -2,7 +2,7 @@
 interface AuthConfig {
    /** App client_id registered with your FHIR authorization server */
    clientId: string
-   /** RSA private key as PEM text, a Buffer, or a path to a PKCS#8 PEM file */
+   /** RSA private key as PKCS#8 PEM text, a Buffer, or base64-encoded PEM */
    privateKey: string | Buffer
    /** OAuth 2.0 token endpoint URL */
    tokenEndpointUrl: string
