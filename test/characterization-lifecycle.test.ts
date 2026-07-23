@@ -4,14 +4,14 @@
 // deliberate and visible in a diff.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import fhirStarter from "../ts/fhirstarter.ts"
+import fhirStarter from "../dist/index.js"
 import { testConfig, mockTokenEndpoint, tokenBody } from "./helpers.ts"
 
 test("v1 QUIRK: onRefresh fires on the INITIAL start() acquisition", async () => {
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
-      const auth = new fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig())
       const seen: string[] = []
       auth.onRefresh((t) => seen.push(t))
       await auth.start()
@@ -27,7 +27,7 @@ test("v1 QUIRK: onRefresh replays current token to a LATE subscriber", async () 
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
-      const auth = new fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig())
       await auth.start()
       const seen: string[] = []
       auth.onRefresh((t) => seen.push(t)) // subscribe AFTER token exists
@@ -43,7 +43,7 @@ test("onRefresh unsubscribe stops further callbacks", async () => {
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
-      const auth = new fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig())
       const seen: string[] = []
       const off = auth.onRefresh((t) => seen.push(t))
       await auth.start()
@@ -59,7 +59,7 @@ test("tokenResponse() is a live view over the current cache", async () => {
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
-      const auth = new fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig())
       const tr = auth.tokenResponse()
       assert.equal(tr.access_token, undefined, "undefined before start")
       await auth.start()
@@ -73,7 +73,7 @@ test("tokenResponse() is a live view over the current cache", async () => {
 })
 
 test("getJwks() strips private members and marks RS384/sig", async () => {
-   const auth = new fhirStarter(testConfig({ keyId: "kid-1" }))
+   const auth = fhirStarter(testConfig({ keyId: "kid-1" }))
    const jwks = await auth.getJwks()
    const jwk = jwks.keys[0] as Record<string, unknown>
    assert.equal(jwk.alg, "RS384")

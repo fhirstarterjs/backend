@@ -3,14 +3,14 @@
 // intentionally changes a documented semantic.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import fhirStarter from "../ts/fhirstarter.ts"
+import fhirStarter from "../dist/index.js"
 import { testConfig, mockTokenEndpoint, tokenBody } from "./helpers.ts"
 
 test("start() acquires a token and exposes it via getters", async () => {
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
-      const auth = new fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig())
       await auth.start()
       assert.ok(auth.token, "token is set after start")
       assert.equal(auth.authorizationHeader, `Bearer ${auth.token}`)
@@ -25,7 +25,7 @@ test("start() is idempotent — second call does not re-fetch", async () => {
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
-      const auth = new fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig())
       await auth.start()
       await auth.start()
       assert.equal(mock.calls.length, 1, "only one token request")
@@ -39,7 +39,7 @@ test("getAccessToken returns cached token before refreshAt (no extra fetch)", as
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
-      const auth = new fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig())
       await auth.start()
       const first = await auth.getAccessToken()
       const second = await auth.getAccessToken()
@@ -56,7 +56,7 @@ test("stale-but-unexpired token is returned when refresh fails", async () => {
    try {
       // ttl=2s → refreshAt = expiresAt - min(60s, ttl/2) = now+1s; expiresAt = now+2s.
       mock.reply(tokenBody(2))
-      const auth = new fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig())
       await auth.start()
       const original = auth.token
       await new Promise((r) => setTimeout(r, 1100)) // past refreshAt, before expiresAt
@@ -73,7 +73,7 @@ test("refresh buffer is min(60s, ttl/2): large ttl uses 60s buffer", async () =>
    const mock = mockTokenEndpoint()
    try {
       mock.reply(tokenBody(3600))
-      const auth = new fhirStarter(testConfig())
+      const auth = fhirStarter(testConfig())
       await auth.start()
       // expiresIn ~3600; refreshAt is 60s before expiry, so still cached now.
       assert.equal(mock.calls.length, 1)

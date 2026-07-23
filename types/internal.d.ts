@@ -18,3 +18,15 @@ interface TokenCache {
 }
 
 type RefreshCallback = (token: string) => void
+
+/** Mutable per-provider state shared across the closure helpers. */
+interface ProviderState {
+   cache: TokenCache | null
+   refreshPromise: Promise<string> | null
+   refreshTimer: ReturnType<typeof setTimeout> | null
+   privateKeyObj: Awaited<ReturnType<typeof import("jose").importPKCS8>> | null
+   started: boolean
+   refreshFailed: boolean
+   refreshRetryMs: number
+   readonly refreshCallbacks: Set<RefreshCallback>
+}

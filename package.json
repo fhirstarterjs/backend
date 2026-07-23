@@ -37,12 +37,12 @@
       "url": "https://github.com/fhirstarterjs/backend/issues"
    },
    "type": "module",
-   "main": "./dist/fhirstarter.js",
+   "main": "./dist/index.js",
    "types": "./types/index.d.ts",
    "exports": {
       ".": {
          "types": "./types/index.d.ts",
-         "import": "./dist/fhirstarter.js"
+         "import": "./dist/index.js"
       }
    },
    "sideEffects": false,
@@ -64,7 +64,7 @@
       "check": "tsc --noEmit",
       "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
       "build": "npm run clean && tsc -p tsconfig.build.json",
-      "test": "node --test \"test/**/*.test.ts\"",
+      "test": "npm run build && node --test \"test/**/*.test.ts\"",
       "prepack": "npm run build"
    },
    "dependencies": {
