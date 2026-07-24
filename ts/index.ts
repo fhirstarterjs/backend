@@ -120,7 +120,7 @@ const fhirStarter = (config: AuthConfig): Provider => {
    }
 }
 
-fhirStarter.thumbprint = thumbprint
-fhirStarter.memoryStore = memoryStore
+fhirStarter.thumbprint = (privateKey: string | Buffer): string => thumbprint(privateKey)
+fhirStarter.memoryStore = (): TokenStore => memoryStore()
 
 export default fhirStarter

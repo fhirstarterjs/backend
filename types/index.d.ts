@@ -1,5 +1,4 @@
 /// <reference path="./api.d.ts" />
-/// <reference path="./internal.d.ts" />
 /// <reference path="./provider.d.ts" />
 /// <reference path="./store.d.ts" />
 

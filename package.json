@@ -47,8 +47,13 @@
    },
    "sideEffects": false,
    "files": [
-      "dist",
-      "types",
+      "dist/*.js",
+      "dist/*.js.map",
+      "dist/index.d.ts",
+      "types/index.d.ts",
+      "types/api.d.ts",
+      "types/provider.d.ts",
+      "types/store.d.ts",
       "README.md",
       "LICENSE.md"
    ],
