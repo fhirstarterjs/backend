@@ -4,10 +4,13 @@
 [![CI](https://github.com/fhirstarterjs/backend/actions/workflows/ci.yml/badge.svg)](https://github.com/fhirstarterjs/backend/actions/workflows/ci.yml)
 [![Publish](https://github.com/fhirstarterjs/backend/actions/workflows/publish.yml/badge.svg)](https://github.com/fhirstarterjs/backend/actions/workflows/publish.yml)
 
-SMART on FHIR **Backend Services** (client credentials) auth lifecycle for any
-FHIR client. It handles the JWT client assertion, JWKS derivation, and automatic
-proactive token refresh, all while staying client-agnostic, so you keep using
-`fhirclient`, `fhir-kit-client`, or raw `fetch`.
+The server-side half of `@fhirstarter`: a SMART on FHIR **Backend Services**
+(client credentials) auth engine. It owns the JWT client assertion, JWKS
+derivation, and a proactive refresh loop that keeps a valid token ready at all
+times, then stays out of your way. Because it never touches FHIR itself, the
+result is a flat handoff you spread into whatever client you already use:
+`FHIR.client(auth.fhirClient)`, `auth.authHeaders` for `fetch`, or
+`auth.onRefresh(...)` to feed `fhir-kit-client`.
 
 > Launching from an EHR instead? See the sister project
 > **[@fhirstarter/ehr](https://github.com/fhirstarterjs/ehr)**, a turnkey SMART
