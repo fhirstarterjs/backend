@@ -152,6 +152,7 @@ import { writeFileSync } from "node:fs"
 import fhirStarter from "@fhirstarter/backend"
 
 const auth = fhirStarter({
+   serverUrl: "https://fhir.example/r4",
    clientId: "your-client-id",
    privateKey: process.env.FHIR_PRIVATE_KEY!, // base64-encoded PKCS#8 PEM
    tokenEndpointUrl: "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token",
@@ -179,6 +180,7 @@ publishing its public JWK for verifiers that cached the old JWKS:
 
 ```ts
 const auth = fhirStarter({
+   serverUrl: "https://fhir.example/r4",
    clientId: "your-client-id",
    privateKey: process.env.FHIR_NEW_KEY!,      // active, signs all assertions
    retiredKeys: [process.env.FHIR_OLD_KEY!],   // publish-only, never signs
@@ -209,6 +211,7 @@ adopt the shared result, avoiding refresh storms.
 
 ```ts
 const auth = fhirStarter({
+   serverUrl: "https://fhir.example/r4",
    clientId: "your-client-id",
    privateKey: process.env.FHIR_PRIVATE_KEY!,
    tokenEndpointUrl: "https://auth.example/token",
@@ -249,8 +252,8 @@ break the auth lifecycle.
 
 ## Validation
 
-`auth.validate()` runs a fast, offline check of the config: HTTPS token
-endpoint, non-empty scopes, key parsing, supported algorithm (RS384/ES384), and
+`auth.validate()` runs a fast, offline check of the config: HTTPS FHIR and token
+endpoints, non-empty scopes, key parsing, supported algorithm (RS384/ES384), and
 unique `kid`s across active and retired keys. It makes no network calls and
 returns `{ ok, problems }`:
 

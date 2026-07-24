@@ -75,6 +75,4 @@ interface FhirClientState {
 }
 
 /** Fetch-ready headers: `{ Authorization }` when authed, else empty. */
-interface AuthHeaders {
-   Authorization?: string
-}
+type AuthHeaders = Record<string, string>

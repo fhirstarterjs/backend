@@ -64,7 +64,9 @@ const fhirStarter = (config: AuthConfig): Provider => {
       })
 
    return {
-      serverUrl: config.serverUrl,
+      get serverUrl() {
+         return config.serverUrl
+      },
       get accessToken() {
          return valid()?.accessToken ?? null
       },
@@ -107,7 +109,7 @@ const fhirStarter = (config: AuthConfig): Provider => {
       },
       get authHeaders() {
          const t = valid()?.accessToken
-         return t ? { Authorization: `Bearer ${t}` } : {}
+         return (t ? { Authorization: `Bearer ${t}` } : {}) as AuthHeaders
       },
       onRefresh: (callback: RefreshCallback) => subscribe(state.refreshCallbacks, callback),
       onRefreshStart: (callback: () => void) => subscribe(state.startListeners, callback),
