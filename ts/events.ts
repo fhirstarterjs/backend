@@ -4,7 +4,7 @@ export const emit = <T>(listeners: Set<(arg: T) => void>, arg: T): void => {
       try {
          fn(arg)
       } catch {
-         /* ignore listener failures — auth lifecycle must continue */
+         /* ignore listener failures — refresh handling must continue */
       }
 }
 
@@ -14,7 +14,7 @@ export const emitVoid = (listeners: Set<() => void>): void => {
       try {
          fn()
       } catch {
-         /* ignore listener failures — auth lifecycle must continue */
+         /* ignore listener failures — refresh handling must continue */
       }
 }
 

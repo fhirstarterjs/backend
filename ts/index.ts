@@ -4,28 +4,27 @@ import { getJwks } from "./jwks.js"
 import { memoryStore } from "./store.js"
 import { subscribe } from "./events.js"
 import { validate } from "./validate.js"
-import { doRefresh, scheduleRefresh } from "./refresh.js"
+import { doRefresh } from "./refresh.js"
 
 /**
- * Create a SMART Backend Services auth provider.
+ * Create a SMART Backend Services auth provider, acquire the first token, and begin the
+ * proactive refresh loop.
  *
  * Manages client-credentials token acquisition and proactive refresh. Uses private-key JWT
  * client assertions (RFC 7523) by default, or a client secret for non-SMART OAuth servers.
  * Each call returns an independent provider closing over its own private state, so one
- * process can run many providers.
+ * process can run many providers. Resolves only after the first token is acquired.
  * @param config - Auth configuration (client ID, credential, token endpoint, scopes).
- * @throws If any required field is missing, blank, or invalid.
+ * @throws If any required field is missing/invalid, or the first token request fails.
  */
-const fhirStarter = (config: AuthConfig): Provider => {
+const fhirStarter = async (config: AuthConfig): Promise<Provider> => {
    const
       cred = validateConfig(config),
       state: ProviderState = {
          cache: null,
          refreshPromise: null,
-         startPromise: null,
          refreshTimer: null,
          privateKeyObj: null,
-         started: false,
          refreshFailed: false,
          refreshRetryMs: 5_000,
          acquiredOnce: false,
@@ -63,7 +62,7 @@ const fhirStarter = (config: AuthConfig): Provider => {
          },
       })
 
-   return {
+   const provider: Provider = {
       get serverUrl() {
          return config.serverUrl
       },
@@ -85,24 +84,6 @@ const fhirStarter = (config: AuthConfig): Provider => {
          return t ? `Bearer ${t}` : null
       },
       getAccessToken,
-      start: (): Promise<void> => {
-         if (state.started) return Promise.resolve()
-         return (state.startPromise ??= (async () => {
-            state.refreshRetryMs = 5_000
-            state.refreshFailed = false
-            try {
-               await getAccessToken()
-               state.started = true
-               scheduleRefresh(config, state, cred)
-            } finally {
-               state.startPromise = null
-            }
-         })())
-      },
-      stop: (): void => {
-         state.started = false
-         state.refreshTimer && (clearTimeout(state.refreshTimer), (state.refreshTimer = null))
-      },
       tokenResponse,
       get fhirClient() {
          return { serverUrl: config.serverUrl, tokenResponse: tokenResponse() }
@@ -115,12 +96,23 @@ const fhirStarter = (config: AuthConfig): Provider => {
       onRefreshStart: (callback: () => void) => subscribe(state.startListeners, callback),
       onRefreshEnd: (callback: () => void) => subscribe(state.endListeners, callback),
       onError: (callback: (error: RefreshError) => void) => subscribe(state.errorListeners, callback),
-      validate: (): ValidationResult => validate(config),
-      getJwks: (): Promise<JwkSet> => getJwks(config, cred),
    }
+
+   await getAccessToken()
+   return provider
 }
 
+/** RFC 7638 JWK Thumbprint (base64url SHA-256) of a private key, without a provider. */
 fhirStarter.thumbprint = (privateKey: string | Buffer): string => thumbprint(privateKey)
+
+/** Single-process reference {@link TokenStore} for coordinating refresh (handy for tests). */
 fhirStarter.memoryStore = (): TokenStore => memoryStore()
+
+/** Offline config check returning `{ ok, problems }` — no network, no provider needed. */
+fhirStarter.validate = (config: AuthConfig): ValidationResult => validate(config)
+
+/** Public JWKS from a private-key config — offline, no token request. */
+fhirStarter.getJwks = async (config: PrivateKeyAuthConfig): Promise<JwkSet> =>
+   getJwks(config, validateConfig(config))
 
 export default fhirStarter

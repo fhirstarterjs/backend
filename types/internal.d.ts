@@ -33,11 +33,8 @@ type AttemptOutcome =
 interface ProviderState {
    cache: TokenCache | null
    refreshPromise: Promise<string> | null
-   /** In-flight initial `start()` promise; concurrent callers await this. */
-   startPromise: Promise<void> | null
    refreshTimer: ReturnType<typeof setTimeout> | null
    privateKeyObj: Awaited<ReturnType<typeof import("jose").importPKCS8>> | null
-   started: boolean
    refreshFailed: boolean
    refreshRetryMs: number
    /** True once the first token has been acquired — gates re-acquisition-only onRefresh. */

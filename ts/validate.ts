@@ -5,6 +5,7 @@ import { keyAlg, thumbprint } from "./jwt.js"
 export const validate = (config: AuthConfig): ValidationResult => {
    const problems: string[] = []
 
+   if (!config.clientId) problems.push("clientId is required")
    try {
       if (new URL(config.serverUrl).protocol !== "https:") problems.push("serverUrl must use https")
    } catch {

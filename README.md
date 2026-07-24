@@ -49,7 +49,7 @@ This example uses the official `fhirclient` package as the FHIR client;
 import FHIR from "fhirclient"
 import fhirStarter from "@fhirstarter/backend"
 
-const auth = fhirStarter({
+const auth = await fhirStarter({
    serverUrl: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
    clientId: "your-client-id",
    privateKey: process.env.FHIR_PRIVATE_KEY!, // base64-encoded PKCS#8 PEM
@@ -57,20 +57,19 @@ const auth = fhirStarter({
    scopes: ["system/Patient.rs", "system/Observation.rs"],
 })
 
-await auth.start()
-
 const client = FHIR.client(auth.fhirClient)
 
 const bundle = await client.request("Patient?family=Smith")
 ```
 
-`auth.start()` fetches the first token and starts the proactive refresh loop.
-`auth.fhirClient` is a ready-to-spread `FHIR.client(...)` argument built from your
-`serverUrl` and a live `tokenResponse`, so `fhirclient` always reads the latest
-token per request.
+`await fhirStarter(config)` fetches the first token, starts the proactive refresh
+loop, and resolves to a ready provider; it rejects if config is invalid or the
+first token request fails. `auth.fhirClient` is a ready-to-spread `FHIR.client(...)`
+argument built from your `serverUrl` and a live `tokenResponse`, so `fhirclient`
+always reads the latest token per request.
 
 `fhirStarter` does not fetch FHIR resources and does not bundle a FHIR client. It
-manages the auth lifecycle; the FHIR client does the rest.
+manages authentication and refresh; the FHIR client does the rest.
 
 `privateKey` can be PKCS#8 PEM text, a `Buffer`, or a base64-encoded PEM string
 (the preferred form for environment variables). File paths are not supported.
@@ -99,12 +98,10 @@ const unsubscribe = auth.onRefresh((token) => {
 
 ## API
 
-`fhirStarter(config)` returns a provider (no `new`)
+`await fhirStarter(config)` resolves to a ready provider (no `new`)
 
 | Member | Returns | Description |
 |---|---|---|
-| `start()` | `Promise<void>` | Fetch first token and begin proactive refresh loop |
-| `stop()` | `void` | Clear the refresh timer |
 | `serverUrl` | `string` | FHIR base URL from config |
 | `accessToken` | `string \| null` | Current valid token, or null if expired |
 | `expiresAt` | `number \| null` | Epoch ms of actual expiry, or null |
@@ -119,13 +116,14 @@ const unsubscribe = auth.onRefresh((token) => {
 | `onRefreshStart(callback)` | `() => void` | Fires when a token request begins |
 | `onRefreshEnd(callback)` | `() => void` | Fires when a token request ends (success or failure) |
 | `onError(callback)` | `() => void` | Fires on failure with a redacted `RefreshError` |
-| `validate()` | `ValidationResult` | Offline config check returning `{ ok, problems }` (no network) |
-| `getJwks()` | `Promise<JwkSet>` | Public JWKS derived from the private key |
 | `fhirStarter.thumbprint(privateKey)` | `string` | RFC 7638 JWK Thumbprint (base64url SHA-256) |
+| `fhirStarter.memoryStore()` | `TokenStore` | Single-process reference token store (handy for tests) |
+| `fhirStarter.validate(config)` | `ValidationResult` | Offline config check returning `{ ok, problems }` (no network) |
+| `fhirStarter.getJwks(config)` | `Promise<JwkSet>` | Public JWKS from a private-key config (offline, no token request) |
 
-`getJwks()` strips private key material; host the output JSON at your registered
-JWKS URL and pass that URL as `jwksUrl` so the JWT `jku` header is set
-automatically.
+`fhirStarter.getJwks(config)` strips private key material; host the output JSON at
+your registered JWKS URL and pass that URL as `jwksUrl` so the JWT `jku` header is
+set automatically. It runs offline but still expects a complete private-key config.
 
 ## Thumbprint
 
@@ -151,7 +149,8 @@ Some SMART Backend Services registrations require a public JWKS URL when using
 import { writeFileSync } from "node:fs"
 import fhirStarter from "@fhirstarter/backend"
 
-const auth = fhirStarter({
+// Offline static: no provider, no token request.
+const jwks = await fhirStarter.getJwks({
    serverUrl: "https://fhir.example/r4",
    clientId: "your-client-id",
    privateKey: process.env.FHIR_PRIVATE_KEY!, // base64-encoded PKCS#8 PEM
@@ -160,9 +159,6 @@ const auth = fhirStarter({
    keyId: "my-key-id",
    jwksUrl: "https://example.com/.well-known/jwks.json",
 })
-
-// No need to call auth.start(); getJwks() only needs the private key.
-const jwks = await auth.getJwks()
 writeFileSync("./jwks.json", JSON.stringify(jwks, null, 3))
 ```
 
@@ -175,11 +171,12 @@ defaults to the key's RFC 7638 thumbprint.
 
 To rotate without downtime, publish the new key alongside the old one during an
 overlap window. Set the new key as `privateKey` (signing switches to it
-immediately) and list the previous key in `retiredKeys` so `getJwks()` keeps
-publishing its public JWK for verifiers that cached the old JWKS:
+immediately) and list the previous key in `retiredKeys` so
+`fhirStarter.getJwks(config)` keeps publishing its public JWK for verifiers that
+cached the old JWKS:
 
 ```ts
-const auth = fhirStarter({
+const auth = await fhirStarter({
    serverUrl: "https://fhir.example/r4",
    clientId: "your-client-id",
    privateKey: process.env.FHIR_NEW_KEY!,      // active, signs all assertions
@@ -195,8 +192,8 @@ assertion lifetime (5 min), then drop it from `retiredKeys`. Each key is
 published under its own `kid` (its thumbprint unless overridden).
 
 If a retired key was published under a custom `kid` while active, pass it as a
-`{ key, keyId }` pair so `getJwks()` republishes it under the same `kid`
-(otherwise it falls back to the thumbprint):
+`{ key, keyId }` pair so `fhirStarter.getJwks(config)` republishes it under the
+same `kid` (otherwise it falls back to the thumbprint):
 
 ```ts
 retiredKeys: [{ key: process.env.FHIR_OLD_KEY!, keyId: "old-kid" }],
@@ -210,7 +207,7 @@ process fetches a token at a time (via an owner-scoped lease) and the others
 adopt the shared result, avoiding refresh storms.
 
 ```ts
-const auth = fhirStarter({
+const auth = await fhirStarter({
    serverUrl: "https://fhir.example/r4",
    clientId: "your-client-id",
    privateKey: process.env.FHIR_PRIVATE_KEY!,
@@ -237,33 +234,34 @@ Tune via config: `timeoutMs` (per-attempt, default 30000), `maxAttempts`
 
 ## Events
 
-`onRefresh(cb)` fires only when a **new** token is acquired after the first,
-not on the initial `start()`, a shared-store load, or a late subscription. Use
-it to push tokens into clients that cache them:
+`onRefresh(cb)` fires on every successful token acquisition after the first
+(including a token adopted from a shared store), not on the initial acquisition
+or a late subscription. Use it to push tokens into clients that cache them:
 
 ```ts
 auth.onRefresh((token) => (client.bearerToken = token))
 ```
 
-`onRefreshStart` / `onRefreshEnd` bracket each token request; `onError` delivers
-a redacted `RefreshError` (`{ message, status? }`) that never contains tokens or
-secrets. All four return an unsubscribe function, and listener exceptions never
-break the auth lifecycle.
+`onRefreshStart` / `onRefreshEnd` bracket each token acquisition attempt;
+`onError` delivers a redacted `RefreshError` (`{ message, status? }`) that never
+contains tokens or secrets. Subscriptions observe attempts after the provider
+resolves; initial failures reject `fhirStarter(config)`. All four return an
+unsubscribe function, and listener exceptions never break refresh handling.
 
 ## Validation
 
-`auth.validate()` runs a fast, offline check of the config: HTTPS FHIR and token
-endpoints, non-empty scopes, key parsing, supported algorithm (RS384/ES384), and
-unique `kid`s across active and retired keys. It makes no network calls and
-returns `{ ok, problems }`:
+`fhirStarter.validate(config)` runs a fast, offline check of the config: HTTPS
+FHIR and token endpoints, non-empty scopes, key parsing, supported algorithm
+(RS384/ES384), and unique `kid`s across active and retired keys. It makes no
+network calls and returns `{ ok, problems }`:
 
 ```ts
-const { ok, problems } = auth.validate()
+const { ok, problems } = fhirStarter.validate(config)
 if (!ok) throw new Error(`Invalid config: ${problems.join("; ")}`)
 ```
 
 Actual credential/scope acceptance can only be proven by a real token request,
-so treat a successful `start()` as the true integration check.
+so treat a successful `await fhirStarter(config)` as the true integration check.
 
 ## Compatibility
 
@@ -281,8 +279,8 @@ clears its internal state after a 401, recreate the client with `auth.fhirClient
 
 ## Notes
 
-- Call `auth.start()` to fetch the first token and begin the proactive refresh
-  loop; call `auth.stop()` during shutdown in long-running processes
+- `await fhirStarter(config)` fetches the first token and begins the proactive
+  refresh loop automatically; the resolved provider is ready to use
 - Tokens are cached with separate refresh and expiry timestamps; if a refresh
   fails but the token is not yet expired, the old token remains usable
 - Concurrent callers share a single in-flight token refresh

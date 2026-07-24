@@ -14,7 +14,7 @@ export const doRefresh = (config: AuthConfig, state: ProviderState, cred: Resolv
          state.refreshRetryMs = 5_000
          state.acquiredOnce = true
          if (reacquisition) emit(state.refreshCallbacks, cache.accessToken)
-         if (state.started) scheduleRefresh(config, state, cred)
+         scheduleRefresh(config, state, cred)
          return cache.accessToken
       })
       .catch((err) => {
@@ -27,7 +27,6 @@ export const doRefresh = (config: AuthConfig, state: ProviderState, cred: Resolv
 
 /** Schedule the next proactive refresh (or a backoff retry after a failure). */
 export const scheduleRefresh = (config: AuthConfig, state: ProviderState, cred: ResolvedCredential): void => {
-   if (!state.started) return
    if (state.refreshTimer) clearTimeout(state.refreshTimer)
    const delay =
       !state.cache || state.refreshFailed
